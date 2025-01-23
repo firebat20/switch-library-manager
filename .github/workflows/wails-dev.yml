@@ -1,9 +1,9 @@
-name: Verify PR
+name: Build wails-dev   
 
 on:
-  pull_request:
+  push:
     branches:
-     - "wails-dev"
+     - "waits-dev"
 
 jobs:
 
@@ -18,3 +18,6 @@ jobs:
     - name: Build app
       run: |
         wails build
+
+    - name: Publish artifacts
+      uses: ./.github/actions/publish-artifacts
