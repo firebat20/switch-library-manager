@@ -8,17 +8,5 @@ runs:
       with:
         go-version: '1.23'
 
-    - name: Get bundler
-      working-directory: ./src
-      shell: bash
-      run: go get -u github.com/asticode/go-astilectron-bundler/
-        
-    - name: Install bundler
-      working-directory: ./src
-      shell: bash
-      run: go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
-
-    - name: Move bundler
-      working-directory: ./src
-      shell: bash
-      run: mv $HOME/go/bin/astilectron-bundler .
+    - name: Install Wails CLI
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest

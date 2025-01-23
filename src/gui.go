@@ -3,20 +3,17 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/asticode/go-astikit"
 	"github.com/asticode/go-astilectron"
-	bootstrap "github.com/asticode/go-astilectron-bootstrap"
 	"github.com/trembon/switch-library-manager/db"
 	"github.com/trembon/switch-library-manager/process"
 	"github.com/trembon/switch-library-manager/settings"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"go.uber.org/zap"
 )
 
@@ -75,12 +72,15 @@ type GUI struct {
 	baseFolder     string
 	localDbManager *db.LocalSwitchDBManager
 	sugarLogger    *zap.SugaredLogger
+	ctx            *wails.Context
 }
 
 func CreateGUI(baseFolder string, sugarLogger *zap.SugaredLogger) *GUI {
 	return &GUI{state: State{}, baseFolder: baseFolder, sugarLogger: sugarLogger}
 }
-func (g *GUI) Start() {
+
+func (g *GUI) Start(ctx *wails.Context) {
+	g.ctx = ctx
 
 	localDbManager, err := db.NewLocalSwitchDBManager(g.baseFolder)
 	if err != nil {
@@ -93,101 +93,15 @@ func (g *GUI) Start() {
 	g.localDbManager = localDbManager
 	defer localDbManager.Close()
 
-	// Run bootstrap
-	if err := bootstrap.Run(bootstrap.Options{
-		Asset:    Asset,
-		AssetDir: AssetDir,
-		AstilectronOptions: astilectron.Options{
-			AppName:            "Switch Library Manager (" + settings.SLM_VERSION + ")",
-			AcceptTCPTimeout:   time.Duration(5) * time.Second,
-			AppIconDarwinPath:  "resources/icon.icns",
-			AppIconDefaultPath: "resources/icon.png",
-			SingleInstance:     true,
-		},
-		Debug:         false,
-		Logger:        log.New(log.Writer(), log.Prefix(), log.Flags()),
-		RestoreAssets: RestoreAssets,
-		Windows: []*bootstrap.Window{{
-			Homepage: "app.html",
-			Adapter: func(w *astilectron.Window) {
-				g.state.window = w
-				g.state.window.OnMessage(g.handleMessage)
-			},
-			Options: &astilectron.WindowOptions{
-				AlwaysOnTop:     astikit.BoolPtr(true),
-				BackgroundColor: astikit.StrPtr("#333"),
-				Center:          astikit.BoolPtr(true),
-				Height:          astikit.IntPtr(600),
-				Width:           astikit.IntPtr(1200),
-				WebPreferences:  &astilectron.WebPreferences{EnableRemoteModule: astikit.BoolPtr(true)},
-			},
-		}},
-		MenuOptions: []*astilectron.MenuItemOptions{
-			{
-				SubMenu: []*astilectron.MenuItemOptions{
-					{
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "C"},
-						Role:        astilectron.MenuItemRoleCopy,
-					},
-					{
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "V"},
-						Role:        astilectron.MenuItemRolePaste,
-					},
-					{Role: astilectron.MenuItemRoleClose},
-				},
-			},
-			{
-				Label: astikit.StrPtr("File"),
-				SubMenu: []*astilectron.MenuItemOptions{
-					{
-						Label:       astikit.StrPtr("Rescan"),
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "R"},
-						OnClick: func(e astilectron.Event) (deleteListener bool) {
-							g.state.window.SendMessage(Message{Name: "rescan", Payload: ""}, func(m *astilectron.EventMessage) {})
-							return
-						},
-					},
-					{
-						Label: astikit.StrPtr("Hard rescan"),
-						OnClick: func(e astilectron.Event) (deleteListener bool) {
-							_ = localDbManager.ClearScanData()
-							g.state.window.SendMessage(Message{Name: "rescan", Payload: ""}, func(m *astilectron.EventMessage) {})
-							return
-						},
-					},
-				},
-			},
-			{
-				Label: astikit.StrPtr("Debug"),
-				SubMenu: []*astilectron.MenuItemOptions{
-					{
-						Label:       astikit.StrPtr("Open DevTools"),
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "D"},
-						OnClick: func(e astilectron.Event) (deleteListener bool) {
-							g.state.window.OpenDevTools()
-							return
-						},
-					},
-				},
-			},
-		},
-	}); err != nil {
-		g.sugarLogger.Error(fmt.Errorf("running bootstrap failed: %w", err))
-		log.Fatal(err)
-	}
+	runtime.EventsOn(g.ctx, "message", g.handleMessage)
 }
 
-func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
+func (g *GUI) handleMessage(data ...interface{}) {
+	msg := data[0].(Message)
 	var retValue string
+
 	g.state.Lock()
 	defer g.state.Unlock()
-	msg := Message{}
-	err := m.Unmarshal(&msg)
-
-	if err != nil {
-		g.sugarLogger.Error("Failed to parse client message", err)
-		return ""
-	}
 
 	g.sugarLogger.Debugf("Received message from client [%v]", msg)
 
@@ -202,23 +116,23 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 
 		g.state.window.SetAlwaysOnTop(false)
 	case "saveSettings":
-		err = g.saveSettings(msg.Payload)
+		err := g.saveSettings(msg.Payload)
 		if err != nil {
 			g.sugarLogger.Error(err)
-			g.state.window.SendMessage(Message{Name: "error", Payload: err.Error()}, func(m *astilectron.EventMessage) {})
-			return ""
+			runtime.EventsEmit(g.ctx, "error", err.Error())
+			return
 		}
 	case "missingGames":
 		missingGames := g.getMissingGames()
 		msg, _ := json.Marshal(missingGames)
-		g.state.window.SendMessage(Message{Name: "missingGames", Payload: string(msg)}, func(m *astilectron.EventMessage) {})
+		runtime.EventsEmit(g.ctx, "missingGames", string(msg))
 	case "updateLocalLibrary":
 		ignoreCache, _ := strconv.ParseBool(msg.Payload)
 		localDB, err := g.buildLocalDB(g.localDbManager, ignoreCache)
 		if err != nil {
 			g.sugarLogger.Error(err)
-			g.state.window.SendMessage(Message{Name: "error", Payload: err.Error()}, func(m *astilectron.EventMessage) {})
-			return ""
+			runtime.EventsEmit(g.ctx, "error", err.Error())
+			return
 		}
 		response := LocalLibraryData{}
 		libraryData := []LibraryTemplateData{}
@@ -286,14 +200,14 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 		response.NumFiles = localDB.NumFiles
 		response.Issues = issues
 		msg, _ := json.Marshal(response)
-		g.state.window.SendMessage(Message{Name: "libraryLoaded", Payload: string(msg)}, func(m *astilectron.EventMessage) {})
+		runtime.EventsEmit(g.ctx, "libraryLoaded", string(msg))
 	case "updateDB":
 		if g.state.switchDB == nil {
 			switchDb, err := g.buildSwitchDb()
 			if err != nil {
 				g.sugarLogger.Error(err)
-				g.state.window.SendMessage(Message{Name: "error", Payload: err.Error()}, func(m *astilectron.EventMessage) {})
-				return ""
+				runtime.EventsEmit(g.ctx, "error", err.Error())
+				return
 			}
 			g.state.switchDB = switchDb
 		}
@@ -306,15 +220,14 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 		if err != nil {
 			g.sugarLogger.Error(err)
 			if !strings.Contains(err.Error(), "dial tcp") {
-				g.state.window.SendMessage(Message{Name: "error", Payload: err.Error()}, func(m *astilectron.EventMessage) {})
+				runtime.EventsEmit(g.ctx, "error", err.Error())
 			}
 		}
 		retValue = strconv.FormatBool(newUpdate)
 	}
 
 	g.sugarLogger.Debugf("Server response [%v]", retValue)
-
-	return retValue
+	runtime.EventsEmit(g.ctx, "response", retValue)
 }
 
 func getType(gameFile *db.SwitchGameFiles) string {
@@ -424,7 +337,7 @@ func (g *GUI) organizeLibrary() {
 	options := settings.ReadSettings(g.baseFolder).OrganizeOptions
 	if !process.IsOptionsValid(options) {
 		zap.S().Error("the organize options in settings.json are not valid, please check that the template contains file/folder name")
-		g.state.window.SendMessage(Message{Name: "error", Payload: "the organize options in settings.json are not valid, please check that the template contains file/folder name"}, func(m *astilectron.EventMessage) {})
+		runtime.EventsEmit(g.ctx, "error", "the organize options in settings.json are not valid, please check that the template contains file/folder name")
 		return
 	}
 	process.OrganizeByFolders(folderToScan, g.state.localDB, g.state.switchDB, g)
@@ -442,7 +355,7 @@ func (g *GUI) UpdateProgress(curr int, total int, message string) {
 		return
 	}
 
-	g.state.window.SendMessage(Message{Name: "updateProgress", Payload: string(msg)}, func(m *astilectron.EventMessage) {})
+	runtime.EventsEmit(g.ctx, "updateProgress", string(msg))
 }
 
 func (g *GUI) getMissingGames() []SwitchTitle {

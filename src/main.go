@@ -10,7 +10,11 @@ import (
 
 	"github.com/trembon/switch-library-manager/console"
 	"github.com/trembon/switch-library-manager/settings"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 func main() {
@@ -61,7 +65,21 @@ func main() {
 	}
 
 	if useGUI {
-		CreateGUI(workingFolder, sugar).Start()
+		err := wails.Run(&options.App{
+			Title:  "Switch Library Manager",
+			Width:  1200,
+			Height: 600,
+			Windows: &windows.Options{
+				Theme: windows.SystemDefault,
+			},
+			OnStartup: func(ctx *wails.Context) {
+				gui := CreateGUI(workingFolder, sugar)
+				gui.Start(ctx)
+			},
+		})
+		if err != nil {
+			sugar.Fatalf("Error starting GUI: %v", err)
+		}
 	} else {
 		console.FixConsoleOutput()
 		CreateConsole(workingFolder, sugar, consoleFlags).Start()
@@ -83,7 +101,11 @@ func createLogger(workingFolder string, debug bool) *zap.Logger {
 	if runtime.GOOS == "windows" {
 		zap.RegisterSink("winfile", func(u *url.URL) (zap.Sink, error) {
 			// Remove leading slash left by url.Parse()
-			return os.OpenFile(u.Path[1:], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+			return zapcore.AddSync(&os.File{
+				Name: u.Path[1:],
+				Flag: os.O_WRONLY | os.O_APPEND | os.O_CREATE,
+				Perm: 0644,
+			}), nil
 		})
 		logPath = "winfile:///" + logPath
 	}

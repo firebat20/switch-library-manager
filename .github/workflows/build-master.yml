@@ -16,7 +16,8 @@ jobs:
       uses: ./.github/actions/setup-environment
 
     - name: Build app
-      uses: ./.github/actions/build-app
+      run: |
+        wails build
 
     - name: Publish artifacts
       uses: ./.github/actions/publish-artifacts
