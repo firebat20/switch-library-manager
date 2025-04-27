@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/avast/retry-go/v4"
+	"github.com/avast/retry-go"
 )
 
 type ReadAtCloser interface {

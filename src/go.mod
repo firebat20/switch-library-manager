@@ -6,7 +6,7 @@ require (
 	github.com/asticode/go-astikit v0.54.0
 	github.com/asticode/go-astilectron v0.30.0
 	github.com/asticode/go-astilectron-bootstrap v0.4.14
-	github.com/avast/retry-go/v4 v4.6.1
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/boltdb/bolt v1.3.1
 	github.com/jedib0t/go-pretty/v6 v6.6.7
 	github.com/magiconair/properties v1.8.10
