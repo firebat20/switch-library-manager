@@ -1,4 +1,3 @@
-
 .wrapper {
     font-family: sans-serif;
     color: #555;
@@ -704,6 +703,93 @@ select.form-element-field {
 
 .center{
     text-align: center;
+}
+
+/* Dark mode styles */
+body.dark-mode {
+    background: #181a1b !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .wrapper {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .tabs a,
+body.dark-mode .tabs a:visited {
+    background: #23272b !important;
+    color: #bbb !important;
+    border-bottom: 2px solid #444 !important;
+}
+
+body.dark-mode .tabs a.active,
+body.dark-mode .tabs a:hover {
+    background: #2ae475 !important;
+    color: #23272b !important;
+}
+
+body.dark-mode .form-card {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.7);
+}
+
+body.dark-mode .form-element-label,
+body.dark-mode .form-element-field,
+body.dark-mode .form-element-hint {
+    color: #bbb !important;
+}
+
+body.dark-mode .form-element-bar {
+    background: #444 !important;
+}
+body.dark-mode .form-element-bar::after {
+    background: #2ae475 !important;
+}
+
+body.dark-mode .alert {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .btn,
+body.dark-mode .btn-outline-primary,
+body.dark-mode .btn-outline-secondary {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
+}
+
+body.dark-mode .btn:hover,
+body.dark-mode .btn-outline-primary:hover,
+body.dark-mode .btn-outline-secondary:hover {
+    background: #2ae475 !important;
+    color: #23272b !important;
+    border-color: #2ae475 !important;
+}
+
+body.dark-mode pre,
+body.dark-mode code {
+    background: #181a1b !important;
+    color: #e0e0e0 !important;
+}
+
+/* Optional: Table and input tweaks for dark mode */
+body.dark-mode .tabulator,
+body.dark-mode .tabulator .tabulator-header,
+body.dark-mode .tabulator .tabulator-tableholder {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+    background: #23272b !important;
+    color: #e0e0e0 !important;
+    border-color: #444 !important;
 }
 
 
