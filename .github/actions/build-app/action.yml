@@ -3,7 +3,7 @@ description: Builds the app
 runs:
   using: composite
   steps:
-    - name: Run bundler
+    - name: Run builder
       working-directory: ./src
       shell: bash
       run: wails build

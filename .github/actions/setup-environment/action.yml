@@ -3,12 +3,8 @@ description: Setup the environment for compiling the solution
 runs:
   using: composite
   steps:
-    - name: Set up Go
-      uses: actions/setup-go@v4
+    - name: Set up Go and Wails
+      uses: dAppServer/wails-build-action@v2.2
       with:
         go-version: "1.24"
 
-    - name: Get Wails
-      working-directory: ./src
-      shell: bash
-      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
