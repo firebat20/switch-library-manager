@@ -6,4 +6,4 @@ runs:
     - name: Run bundler
       working-directory: ./src
       shell: bash
-      run: ./astilectron-bundler
+      run: ./wails build

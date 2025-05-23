@@ -1,6 +1,7 @@
 .idea
-resources/app/vendor
 output
 windows.syso
 bind_*_amd64.go
-astilectron-bundler.exe
+src/build/bin
+src/frontend/node_modules
+src/frontend/dist
