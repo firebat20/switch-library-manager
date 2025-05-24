@@ -144,7 +144,12 @@ $(function () {
             return
         }
         if (!result.filePaths || !result.filePaths.length){
-            return
+            showMessageBox({
+                type: 'warning',
+                title: 'Folder Error',
+                message: 'No folder was selected'
+            });
+            return;
         }
 
         if (mode === "add"){
@@ -168,16 +173,21 @@ $(function () {
 
     function loadTab(target) {
         hideCurrentTab();
-
         $("#tab_btns a[href='" + target + "']").addClass('active');
         $(target).show();
 
+        // If loading library data and it is not yet available, show a placeholder so the UI is not blank
+        if(target === "#library" && state.settings.folder && !state.library){
+            $(target).html("<div class='alert alert-warning'>Library data is loading, please wait...</div>");
+            return;
+        }
+        
         if (target === "#settings") {
             let settingsJSON = JSON.stringify(state.settings, null, 2)
             let settingsHtml = $(target + "Template").render({code: settingsJSON})
             $(target).html(settingsHtml);
         } else if (target === "#organize") {
-            let html = $(target + "Template").render({folder: state.settings.folder,settings:state.settings})
+            let html = $(target + "Template").render({folder: state.settings.folder, settings: state.settings})
             $(target).html(html);
         } else if (target === "#updates") {
             if (state.settings.folder && !state.library){
