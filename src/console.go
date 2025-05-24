@@ -71,7 +71,7 @@ func (c *Console) Start() {
 	settingsObj.VersionsEtag = versionsEtag
 	progressBar.Add(1)
 	progressBar.Finish()
-	newUpdate, err := settings.CheckForUpdates()
+	newUpdate, _ := settings.CheckForUpdates()
 
 	if newUpdate {
 		fmt.Printf("\n=== New version available, download from Github ===\n")

@@ -13,6 +13,7 @@ import (
 	"github.com/trembon/switch-library-manager/process"
 	"github.com/trembon/switch-library-manager/settings"
 	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/menu"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"go.uber.org/zap"
@@ -88,6 +89,14 @@ func NewGUI(baseFolder string, sugarLogger *zap.SugaredLogger) *GUI {
 
 // Start runs the Wails app and blocks until exit.
 func (g *GUI) Start() {
+	// Create the menu bar
+	menubar := menu.NewMenu()
+	item1 := menubar.AddSubmenu("File")
+	item1.AddText("Scan", nil, func(_ *menu.CallbackData) {})
+	item1.AddText("Rescan", nil, func(_ *menu.CallbackData) {})
+	item2 := menubar.AddSubmenu("Debug")
+	item2.AddText("Open DevTools", nil, func(_ *menu.CallbackData) {})
+
 	err := wails.Run(&options.App{
 		Title:  "Switch Library Manager",
 		Width:  1024,
@@ -97,6 +106,7 @@ func (g *GUI) Start() {
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup:        g.Startup,
+		Menu:             menubar,
 		Bind: []interface{}{
 			g,
 		},
@@ -184,7 +194,7 @@ func (g *GUI) UpdateLocalLibrary(ignoreCache bool) (LocalLibraryData, error) {
 				name = v.File.Metadata.Ncap.TitleName["AmericanEnglish"].Title
 			}
 			// If updates exist, use the latest update's version
-			if v.Updates != nil && len(v.Updates) != 0 {
+			if len(v.Updates) != 0 {
 				if v.Updates[v.LatestUpdate].Metadata.Ncap != nil {
 					version = v.Updates[v.LatestUpdate].Metadata.Ncap.DisplayVersion
 				} else {
