@@ -11,8 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-        uses: actions/upload-artifact@v3
-
       - name: Setup environment
         uses: ./.github/actions/setup-environment
 
