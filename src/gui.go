@@ -79,7 +79,7 @@ type GUI struct {
 var assets embed.FS
 
 // NewGUI creates a new GUI instance but does NOT start the Wails app.
-func NewGUI(baseFolder string, sugarLogger *zap.SugaredLogger) *GUI {
+func CreateGUI(baseFolder string, sugarLogger *zap.SugaredLogger) *GUI {
 	return &GUI{
 		state:       State{},
 		baseFolder:  baseFolder,

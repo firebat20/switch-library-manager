@@ -6,6 +6,7 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
+  "frontend:dir": "resources/app",
   "author": {
     "name": "firebat20",
     "email": "63678935+firebat20@users.noreply.github.com"

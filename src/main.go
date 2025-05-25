@@ -61,7 +61,7 @@ func main() {
 	}
 
 	if useGUI {
-		NewGUI(workingFolder, sugar).Start()
+		CreateGUI(workingFolder, sugar).Start()
 	} else {
 		console.FixConsoleOutput()
 		CreateConsole(workingFolder, sugar, consoleFlags).Start()
