@@ -7,11 +7,11 @@ require (
 	github.com/asticode/go-astilectron v0.30.0
 	github.com/asticode/go-astilectron-bootstrap v0.4.14
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/boltdb/bolt v1.3.1
 	github.com/jedib0t/go-pretty v4.3.0+incompatible
 	github.com/magiconair/properties v1.8.10
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/schollz/progressbar/v3 v3.18.0
+	go.etcd.io/bbolt v1.4.1
 	go.uber.org/zap v1.27.0
 	robpike.io/nihongo v0.0.0-20230705220025-ab7f6184a918
 )

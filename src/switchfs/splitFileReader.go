@@ -2,13 +2,14 @@ package switchfs
 
 import (
 	"errors"
-	"github.com/avast/retry-go"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/avast/retry-go"
 )
 
 type ReadAtCloser interface {
