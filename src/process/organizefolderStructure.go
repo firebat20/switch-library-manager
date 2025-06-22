@@ -25,7 +25,18 @@ func DeleteOldUpdates(baseFolder string, localDB *db.LocalSwitchFilesDB, updateP
 	i := 0
 	for k, v := range localDB.Skipped {
 		switch v.ReasonCode {
-		//case db.REASON_DUPLICATE:
+		case db.REASON_DUPLICATE:
+			fileToRemove := filepath.Join(k.BaseFolder, k.FileName)
+			if updateProgress != nil {
+				updateProgress.UpdateProgress(0, 0, "deleting "+fileToRemove)
+			}
+			zap.S().Infof("Deleting file: %v \n", fileToRemove)
+			err := os.Remove(fileToRemove)
+			if err != nil {
+				zap.S().Errorf("Failed to delete file  %v  [%v]\n", fileToRemove, err)
+				continue
+			}
+			i++
 		case db.REASON_OLD_UPDATE:
 			fileToRemove := filepath.Join(k.BaseFolder, k.FileName)
 			if updateProgress != nil {
