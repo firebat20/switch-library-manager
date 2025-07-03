@@ -17,7 +17,7 @@ type ReadAtCloser interface {
 }
 
 type splitFile struct {
-	info      []os.FileInfo
+	info      []os.DirEntry
 	files     []ReadAtCloser
 	path      string
 	chunkSize int64
@@ -64,8 +64,12 @@ func NewSplitFileReader(filePath string) (*splitFile, error) {
 		return nil, err
 	}
 	result.path = splitFileFolder
-	result.chunkSize = files[0].Size()
-	result.info = make([]os.FileInfo, 0, len(files))
+	fileInfo, err := files[0].Info()
+	if err != nil {
+		return nil, err
+	}
+	result.chunkSize = fileInfo.Size()
+	result.info = make([]os.DirEntry, 0, len(files))
 	result.files = make([]ReadAtCloser, len(files))
 	for _, file := range files {
 		if _, err := strconv.Atoi(file.Name()[len(file.Name())-1:]); err == nil {
@@ -79,7 +83,7 @@ func (sp *splitFile) ReadAt(p []byte, off int64) (n int, err error) {
 	//calculate the part containing the offset
 	part := int(off / sp.chunkSize)
 
-	if len(sp.info) < part {
+	if part >= len(sp.info) {
 		return 0, errors.New("missing part " + strconv.Itoa(part))
 	}
 
@@ -89,7 +93,11 @@ func (sp *splitFile) ReadAt(p []byte, off int64) (n int, err error) {
 	}
 	off = off - sp.chunkSize*int64(part)
 
-	if off < 0 || off > sp.info[part].Size() {
+	fileInfo, err := sp.info[part].Info()
+	if err != nil {
+		return 0, err
+	}
+	if off < 0 || off > fileInfo.Size() {
 		return 0, errors.New("offset is out of bounds")
 	}
 	return sp.files[part].ReadAt(p, off)
