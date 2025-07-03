@@ -3,13 +3,12 @@ package switchfs
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 
-	"github.com/avast/retry-go"
+	"github.com/avast/retry-go/v4"
 )
 
 type ReadAtCloser interface {
@@ -60,7 +59,7 @@ func NewSplitFileReader(filePath string) (*splitFile, error) {
 	result := splitFile{}
 	index := strings.LastIndex(filePath, string(os.PathSeparator))
 	splitFileFolder := filePath[:index]
-	files, err := ioutil.ReadDir(splitFileFolder)
+	files, err := os.ReadDir(splitFileFolder)
 	if err != nil {
 		return nil, err
 	}
