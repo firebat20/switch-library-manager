@@ -1,7 +1,6 @@
 package process
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -143,7 +142,7 @@ func OrganizeByFolders(baseFolder string,
 		if v.IsSplit {
 			//in case of a split file, we only rename the folder and then move all the split
 			//files with the new folder
-			files, err := ioutil.ReadDir(v.File.ExtendedInfo.BaseFolder)
+			files, err := os.ReadDir(v.File.ExtendedInfo.BaseFolder)
 			if err != nil {
 				continue
 			}
@@ -462,7 +461,7 @@ func deleteEmptyFolders(path string) error {
 }
 
 func deleteEmptyFolder(path string) error {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}

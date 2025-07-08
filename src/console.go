@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jedib0t/go-pretty/table"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/schollz/progressbar/v3"
 	"github.com/trembon/switch-library-manager/console"
 	"github.com/trembon/switch-library-manager/db"
@@ -50,7 +50,7 @@ func (c *Console) Start() {
 	}
 
 	//1. load the titles JSON object
-	fmt.Println("Downlading latest switch titles json file")
+	fmt.Println("Downloading latest switch titles json file")
 	progressBar = progressbar.New(2)
 
 	filename := filepath.Join(c.baseFolder, settings.TITLE_JSON_FILENAME)
