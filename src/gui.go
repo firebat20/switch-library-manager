@@ -20,6 +20,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// Dummy asset definitions for bootstrap.
+// Replace these with actual implementations as needed.
+var Asset bootstrap.Asset = func(name string) ([]byte, error) { return nil, nil }
+var AssetDir bootstrap.AssetDir = func(name string) ([]string, error) { return nil, nil }
+var RestoreAssets bootstrap.RestoreAssets = func() error { return nil }
+
 type Pair struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -77,9 +83,12 @@ type GUI struct {
 	sugarLogger    *zap.SugaredLogger
 }
 
+// CreateGUI initializes a new GUI instance with the specified base folder and logger.
 func CreateGUI(baseFolder string, sugarLogger *zap.SugaredLogger) *GUI {
 	return &GUI{state: State{}, baseFolder: baseFolder, sugarLogger: sugarLogger}
 }
+
+// Start initializes the GUI, sets up local database and settings, and runs the bootstrap to launch the application UI.
 func (g *GUI) Start() {
 
 	localDbManager, err := db.NewLocalSwitchDBManager(g.baseFolder)
@@ -177,6 +186,7 @@ func (g *GUI) Start() {
 	}
 }
 
+// handleMessage processes incoming messages from the client and performs corresponding actions.
 func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 	var retValue string
 	g.state.Lock()

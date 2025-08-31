@@ -8,7 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mcuadros/go-version"
+	"golang.org/x/mod/semver"
+
 	"go.uber.org/zap"
 )
 
@@ -192,7 +193,7 @@ func CheckForUpdates() (bool, error) {
 
 	remoteVer := remoteValues["version"]
 
-	if version.CompareSimple(remoteVer, localVer) > 0 {
+	if semver.CompareSimple(remoteVer, localVer) > 0 {
 		return true, nil
 	}
 
