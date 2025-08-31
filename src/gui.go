@@ -20,12 +20,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Dummy asset definitions for bootstrap.
-// Replace these with actual implementations as needed.
-var Asset bootstrap.Asset = func(name string) ([]byte, error) { return nil, nil }
-var AssetDir bootstrap.AssetDir = func(name string) ([]string, error) { return nil, nil }
-var RestoreAssets bootstrap.RestoreAssets = func() error { return nil }
-
 type Pair struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
