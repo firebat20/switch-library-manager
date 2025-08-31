@@ -193,7 +193,7 @@ func CheckForUpdates() (bool, error) {
 
 	remoteVer := remoteValues["version"]
 
-	if semver.CompareSimple(remoteVer, localVer) > 0 {
+	if semver.Compare(remoteVer, localVer) > 0 {
 		return true, nil
 	}
 
