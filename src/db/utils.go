@@ -4,13 +4,13 @@ import (
 	bytes2 "bytes"
 	"encoding/json"
 	"errors"
-	"go.uber.org/zap"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type ProgressUpdater interface {
@@ -97,7 +97,7 @@ func downloadBytesFromUrl(url string, etag string) ([]byte, string, error) {
 	etag = resp.Header.Get("Etag")
 
 	if resp.StatusCode == http.StatusOK {
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, "", err
 		}
@@ -109,7 +109,7 @@ func downloadBytesFromUrl(url string, etag string) ([]byte, string, error) {
 
 func saveFile(bytes []byte, fileName string) (*os.File, error) {
 
-	err := ioutil.WriteFile(fileName, bytes, 0644)
+	err := os.WriteFile(fileName, bytes, 0644)
 	if err != nil {
 		return nil, err
 	}

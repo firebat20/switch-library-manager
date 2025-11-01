@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/asticode/go-astikit"
-	"github.com/asticode/go-astilectron"
-	bootstrap "github.com/asticode/go-astilectron-bootstrap"
+	"github.com/firebat20/go-astilectron"
+	bootstrap "github.com/firebat20/go-astilectron-bootstrap"
 	"github.com/trembon/switch-library-manager/db"
 	"github.com/trembon/switch-library-manager/process"
 	"github.com/trembon/switch-library-manager/settings"
