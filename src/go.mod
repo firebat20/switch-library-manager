@@ -5,13 +5,13 @@ go 1.25
 require (
 	github.com/asticode/go-astikit v0.56.0
 	github.com/avast/retry-go/v4 v4.7.0
-	github.com/boltdb/bolt v1.3.1
 	github.com/firebat20/go-astilectron v0.0.0-20251012034004-e5ff866697eb
 	github.com/firebat20/go-astilectron-bootstrap v0.0.0-20251101140325-564b109b03f6
 	github.com/jedib0t/go-pretty/v6 v6.6.9
 	github.com/magiconair/properties v1.8.10
 	github.com/mcuadros/go-version v0.0.0-20190830083331-035f6764e8d2
 	github.com/schollz/progressbar/v3 v3.18.0
+	go.etcd.io/bbolt v1.4.3
 	go.uber.org/zap v1.27.0
 	robpike.io/nihongo v0.0.0-20230705220025-ab7f6184a918
 )
