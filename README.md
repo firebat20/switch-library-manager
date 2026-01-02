@@ -1,3 +1,12 @@
+# Update 2026-01-02
+
+As seen there havent been much activity in this repo lately which is because the motivation from my side has been low as I dont use this application anymore.
+Together with that I see some forks created with patches and improvements never gets back as PR to this "main" repo, I feel
+
+I have no problem to continue to keep this repo alive, with viewing/closing issues/pull requests and creating releases, but I have seen some forks created with patches and improvements, even bug fixes, that never gets back as pull requests to this repo I guess the community doesnt care enough about this tool anymore.
+
+So, if any of the forks mature more and seems like the more go-to version, create an issue and I can edit the readme to refer to that repo instead.
+
 # Switch library manager
 
 Fork of [Switch Library Manager](https://github.com/giwty/switch-library-manager) created by giwty with continued improvements and changes
