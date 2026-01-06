@@ -1,9 +1,8 @@
-# Update 2026-01-02
+# Update 2026-01-06
 
-As seen there havent been much activity in this repo lately which is because the motivation from my side has been low as I dont use this application anymore.
-Together with that I see some forks created with patches and improvements never gets back as PR to this "main" repo, I feel
+As seen there havent been much activity in this repo lately which is because the motivation from my side has been low as I dont use this application that much anymore.
 
-I have no problem to continue to keep this repo alive, with viewing/closing issues/pull requests and creating releases, but I have seen some forks created with patches and improvements, even bug fixes, that never gets back as pull requests to this repo I guess the community doesnt care enough about this tool anymore.
+I have no problem to continue to keep this repo alive, with viewing/closing issues/pull requests and creating releases, but I have seen some forks created with some continued work that maybe will get more active by time.
 
 So, if any of the forks mature more and seems like the more go-to version, create an issue and I can edit the readme to refer to that repo instead.
 
