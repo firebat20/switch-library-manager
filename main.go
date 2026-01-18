@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"net/url"
 	"os"
@@ -10,8 +11,14 @@ import (
 
 	"github.com/trembon/switch-library-manager/console"
 	"github.com/trembon/switch-library-manager/settings"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"go.uber.org/zap"
 )
+
+//go:embed all:frontend/dist
+var assets embed.FS
 
 func main() {
 	exePath, err := os.Executable()
@@ -33,18 +40,12 @@ func main() {
 	appSettings := settings.ReadSettings(workingFolder)
 
 	logger := createLogger(workingFolder, appSettings.Debug)
-
-	defer logger.Sync() // flushes buffer, if any
+	defer logger.Sync()
 	sugar := logger.Sugar()
 
 	sugar.Info("[SLM starts]")
 	sugar.Infof("[Executable: %v]", exePath)
 	sugar.Infof("[Working directory: %v]", workingFolder)
-
-	files, err := AssetDir(workingFolder)
-	if files == nil && err == nil {
-		appSettings.GUI = false
-	}
 
 	console.InitializeFlags()
 	console.LogFlags(sugar)
@@ -61,7 +62,25 @@ func main() {
 	}
 
 	if useGUI {
-		CreateGUI(workingFolder, sugar).Start()
+		app := NewApp(workingFolder, sugar)
+
+		err := wails.Run(&options.App{
+			Title:  "Switch Library Manager (" + settings.SLM_VERSION + ")",
+			Width:  1200,
+			Height: 600,
+			AssetServer: &assetserver.Options{
+				Assets: assets,
+			},
+			OnStartup:  app.startup,
+			OnShutdown: app.shutdown,
+			Bind: []interface{}{
+				app,
+			},
+		})
+
+		if err != nil {
+			println("Error:", err.Error())
+		}
 	} else {
 		console.FixConsoleOutput()
 		CreateConsole(workingFolder, sugar, consoleFlags).Start()

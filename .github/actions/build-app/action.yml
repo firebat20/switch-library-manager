@@ -3,7 +3,6 @@ description: Builds the app
 runs:
   using: composite
   steps:
-    - name: Run bundler
-      working-directory: ./src
+    - name: Build
       shell: bash
-      run: ./astilectron-bundler
+      run: wails build

@@ -4,3 +4,4 @@ output
 windows.syso
 bind_*_amd64.go
 astilectron-bundler.exe
+build/bin

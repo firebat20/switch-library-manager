@@ -72,6 +72,9 @@ func (c *Console) Start() {
 	progressBar.Add(1)
 	progressBar.Finish()
 	newUpdate, err := settings.CheckForUpdates()
+	if err != nil {
+		fmt.Printf("\nFailed to check for updates: %v\n", err)
+	}
 
 	if newUpdate {
 		fmt.Printf("\n=== New version available, download from Github ===\n")
