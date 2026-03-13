@@ -194,6 +194,10 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 			continue
 		}
 
+        if strings.HasPrefix(file.FileName, "_") {
+            continue
+        }
+
 		fileName := strings.ToLower(file.FileName)
 		isSplit := false
 
