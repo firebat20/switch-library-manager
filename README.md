@@ -1,12 +1,4 @@
-# Update 2026-01-06
-
-As seen there havent been much activity in this repo lately which is because the motivation from my side has been low as I dont use this application that much anymore.
-
-I have no problem to continue to keep this repo alive, with viewing/closing issues/pull requests and creating releases, but I have seen some forks created with some continued work that maybe will get more active by time.
-
-So, if any of the forks mature more and seems like the more go-to version, create an issue and I can edit the readme to refer to that repo instead.
-
-# Switch library manager
+# Switch Library Manager
 
 Fork of [Switch Library Manager](https://github.com/giwty/switch-library-manager) created by giwty with continued improvements and changes
 
@@ -96,6 +88,14 @@ The following template elements are supported:
 - {DLC_NAME} - DLC name (only applicable to DLCs)
 
 ## Usage
+
+### Special File Handling
+
+- **Prevent Renaming:** To prevent the application from renaming a specific file during the organization process, add `[nr]` to its filename. The file will still be moved to the correct directory based on your settings, but its name will be locked.
+  - *Example:* `My Custom Game Name [nr].nsp`
+
+- **Ignoring Files:** To have the scanner completely ignore a file, prefix its name with an underscore (`_`). The file will be skipped and listed as an "unsupported file type."
+  - *Example:* `_my-temporary-file.zip`
 
 ### Windows
 
