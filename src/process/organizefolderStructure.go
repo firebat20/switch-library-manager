@@ -376,7 +376,7 @@ func getFolderName(options settings.OrganizeOptions, templateData map[string]str
 }
 
 func getFileName(options settings.OrganizeOptions, originalName string, templateData map[string]string, nameTry int) string {
-	if !options.RenameFiles {
+	if !options.RenameFiles || strings.Contains(strings.ToLower(originalName), "[nr]") {
 		return originalName
 	}
 	ext := path.Ext(originalName)
