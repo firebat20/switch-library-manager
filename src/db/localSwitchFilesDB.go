@@ -260,7 +260,17 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 				if metadata.Version > switchTitle.LatestUpdate {
 					if switchTitle.LatestUpdate != 0 {
 						oldUpdate := switchTitle.Updates[switchTitle.LatestUpdate]
-						skipped[switchTitle.Updates[switchTitle.LatestUpdate].ExtendedInfo] = SkippedFile{ReasonCode: REASON_OLD_UPDATE, ReasonText: "old update file, newer update exist locally\nnew: " + filepath.Join(file.BaseFolder, file.FileName) + "\nold:" + filepath.Join(oldUpdate.ExtendedInfo.BaseFolder, oldUpdate.ExtendedInfo.FileName)}
+						// Check if the old update is part of the base game file
+                        if switchTitle.BaseExist &&
+                            oldUpdate.ExtendedInfo.BaseFolder == switchTitle.File.ExtendedInfo.BaseFolder &&
+                            oldUpdate.ExtendedInfo.FileName == switchTitle.File.ExtendedInfo.FileName {
+                            // The old update is part of the base game file.
+                            // Don't skip the file, just remove the outdated update version from the map.
+                            delete(switchTitle.Updates, switchTitle.LatestUpdate)
+                        } else {
+                            // The old update is a separate file, so flag it as old.
+                            skipped[oldUpdate.ExtendedInfo] = SkippedFile{ReasonCode: REASON_OLD_UPDATE, ReasonText: "old update file, newer update exist locally\nnew: " + filepath.Join(file.BaseFolder, file.FileName) + "\nold:" + filepath.Join(oldUpdate.ExtendedInfo.BaseFolder, oldUpdate.ExtendedInfo.FileName)}
+                        }
 					}
 					switchTitle.LatestUpdate = metadata.Version
 				} else {
