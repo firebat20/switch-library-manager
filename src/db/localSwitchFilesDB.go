@@ -256,7 +256,12 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 				metadata.Type = "Update"
 
 				if update, ok := switchTitle.Updates[metadata.Version]; ok {
-					skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate update file\n" + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\n" + filepath.Join(file.BaseFolder, file.FileName)}
+					fileToRemove = file;
+
+					if (isCompressed(file.FileName)) {
+						fileToRemove = update.ExtendedInfo;
+					}
+					skipped[fileToRemove] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate update file\n" + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\n" + filepath.Join(file.BaseFolder, file.FileName)}
 					zap.S().Warnf("-->Duplicate update file found [%v] and [%v]", update.ExtendedInfo.FileName, file.FileName)
 					continue
 				}
@@ -412,4 +417,8 @@ func ParseTitleNameFromFileName(fileName string) string {
 		return fileName[:ind]
 	}
 	return fileName
+}
+
+func isCompressed(filename string) bool {
+	return strings.HasSuffix(strings.ToLower(filename), ".xcz") || strings.HasSuffix(strings.ToLower(filename), ".nsz")
 }
