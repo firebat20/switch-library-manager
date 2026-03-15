@@ -194,9 +194,9 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 			continue
 		}
 
-        if strings.HasPrefix(file.FileName, "_") {
-            continue
-        }
+		if strings.HasPrefix(file.FileName, "_") {
+			continue
+		}
 
 		fileName := strings.ToLower(file.FileName)
 		isSplit := false
@@ -256,14 +256,15 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 				metadata.Type = "Update"
 
 				if update, ok := switchTitle.Updates[metadata.Version]; ok {
-					fileToRemove = file;
-
-					if (isCompressed(file.FileName)) {
-						fileToRemove = update.ExtendedInfo;
+					if settings.OrganizeOptions.PrioritizeCompressed && isCompressed(file.FileName) && !isCompressed(update.ExtendedInfo.FileName) {
+						skipped[update.ExtendedInfo] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate update file, keeping compressed version.\nOld: " + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\nNew:" + filepath.Join(file.BaseFolder, file.FileName)}
+						zap.S().Warnf("-->Duplicate update file found. Keeping compressed version [%v] over [%v]", file.FileName, update.ExtendedInfo.FileName)
+						delete(switchTitle.Updates, update.Metadata.Version)
+					} else {
+						skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate update file, keeping existing version.\nExisting: " + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\nDuplicate:" + filepath.Join(file.BaseFolder, file.FileName)}
+						zap.S().Warnf("-->Duplicate update file found. Keeping existing version [%v] over [%v]", update.ExtendedInfo.FileName, file.FileName)
+						continue
 					}
-					skipped[fileToRemove] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate update file\n" + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\n" + filepath.Join(file.BaseFolder, file.FileName)}
-					zap.S().Warnf("-->Duplicate update file found [%v] and [%v]", update.ExtendedInfo.FileName, file.FileName)
-					continue
 				}
 				switchTitle.Updates[metadata.Version] = SwitchFileInfo{ExtendedInfo: file, Metadata: metadata}
 				if metadata.Version > switchTitle.LatestUpdate {
@@ -293,9 +294,14 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 			if strings.HasSuffix(metadata.TitleId, "000") {
 				metadata.Type = "Base"
 				if switchTitle.BaseExist {
-					skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate base file\n" + filepath.Join(switchTitle.File.ExtendedInfo.BaseFolder, switchTitle.File.ExtendedInfo.FileName) + "\n" + filepath.Join(file.BaseFolder, file.FileName)}
-					zap.S().Warnf("-->Duplicate base file found [%v] and [%v]", file.FileName, switchTitle.File.ExtendedInfo.FileName)
-					continue
+					if settings.OrganizeOptions.PrioritizeCompressed && isCompressed(file.FileName) && !isCompressed(switchTitle.File.ExtendedInfo.FileName) {
+						skipped[switchTitle.File.ExtendedInfo] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate base file, keeping compressed version.\nOld: " + filepath.Join(switchTitle.File.ExtendedInfo.BaseFolder, switchTitle.File.ExtendedInfo.FileName) + "\nNew:" + filepath.Join(file.BaseFolder, file.FileName)}
+						zap.S().Warnf("-->Duplicate base file found. Keeping compressed version [%v] over [%v]", file.FileName, switchTitle.File.ExtendedInfo.FileName)
+					} else {
+						skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate base file, keeping existing version.\nExisting: " + filepath.Join(switchTitle.File.ExtendedInfo.BaseFolder, switchTitle.File.ExtendedInfo.FileName) + "\nDuplicate:" + filepath.Join(file.BaseFolder, file.FileName)}
+						zap.S().Warnf("-->Duplicate base file found. Keeping existing version [%v] over [%v]", switchTitle.File.ExtendedInfo.FileName, file.FileName)
+						continue
+					}
 				}
 				switchTitle.File = SwitchFileInfo{ExtendedInfo: file, Metadata: metadata}
 				switchTitle.BaseExist = true
@@ -309,9 +315,15 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 					zap.S().Warnf("-->Old DLC file found [%v] and [%v]", file.FileName, dlc.ExtendedInfo.FileName)
 					continue
 				} else if metadata.Version == dlc.Metadata.Version {
-					skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate DLC file\n" + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\n" + filepath.Join(file.BaseFolder, file.FileName)}
-					zap.S().Warnf("-->Duplicate DLC file found [%v] and [%v]", file.FileName, dlc.ExtendedInfo.FileName)
-					continue
+					if settings.OrganizeOptions.PrioritizeCompressed && isCompressed(file.FileName) && !isCompressed(dlc.ExtendedInfo.FileName) {
+						skipped[dlc.ExtendedInfo] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate DLC file, keeping compressed version.\nOld: " + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\nNew:" + filepath.Join(file.BaseFolder, file.FileName)}
+						zap.S().Warnf("-->Duplicate DLC found. Keeping compressed version [%v] over [%v]", file.FileName, dlc.ExtendedInfo.FileName)
+						delete(switchTitle.Dlc, dlc.Metadata.TitleId)
+					} else {
+						skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "duplicate DLC file, keeping existing version.\nExisting: " + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\nDuplicate:" + filepath.Join(file.BaseFolder, file.FileName)}
+						zap.S().Warnf("-->Duplicate DLC found. Keeping existing version [%v] over [%v]", dlc.ExtendedInfo.FileName, file.FileName)
+						continue
+					}
 				}
 			}
 			//not an update, and not main TitleAttributes, so treat it as a DLC

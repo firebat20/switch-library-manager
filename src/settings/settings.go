@@ -47,6 +47,7 @@ type OrganizeOptions struct {
 	SwitchSafeFileNames        bool   `json:"switch_safe_file_names"`
 	FileNameTemplate           string `json:"file_name_template"`
 	ProcessWhenMissingBaseGame bool   `json:"process_when_missing_base_game"`
+	PrioritizeCompressed       bool   `json:"prioritize_compressed"`
 }
 
 type AppSettings struct {
@@ -86,7 +87,7 @@ func ReadSettings(baseFolder string) *AppSettings {
 		return settingsInstance
 	}
 	settingsInstance = &AppSettings{Debug: false, GuiPagingSize: 100, ScanFolders: []string{},
-		OrganizeOptions: OrganizeOptions{SwitchSafeFileNames: true}, Prodkeys: "", IgnoreDLCTitleIds: []string{"01007F600B135007"}}
+		OrganizeOptions: OrganizeOptions{SwitchSafeFileNames: true, PrioritizeCompressed: true}, Prodkeys: "", IgnoreDLCTitleIds: []string{"01007F600B135007"}}
 	if _, err := os.Stat(filepath.Join(baseFolder, SETTINGS_FILENAME)); err == nil {
 		file, err := os.Open(filepath.Join(baseFolder, SETTINGS_FILENAME))
 		if err != nil {
@@ -157,6 +158,7 @@ func saveDefaultSettings(baseFolder string) *AppSettings {
 			SwitchSafeFileNames:        true,
 			DeleteOldUpdateFiles:       false,
 			ProcessWhenMissingBaseGame: false,
+			PrioritizeCompressed:       true,
 		},
 	}
 	return SaveSettings(settingsInstance, baseFolder)
