@@ -24,7 +24,9 @@ var (
 const (
 	DB_TABLE_FILE_SCAN_METADATA = "deep-scan"
 	DB_TABLE_LOCAL_LIBRARY      = "local-library"
+)
 
+const (
 	REASON_UNSUPPORTED_TYPE = iota
 	REASON_DUPLICATE
 	REASON_OLD_UPDATE
@@ -241,6 +243,7 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 			}
 		}
 
+		hasBase := len(baseMetadata) > 0
 		orderedMetadata := append(baseMetadata, otherMetadata...)
 
 		for _, metadata := range orderedMetadata {
@@ -277,7 +280,9 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 						zap.S().Warnf("-->Duplicate update file found. Keeping compressed version [%v] over [%v]", file.FileName, update.ExtendedInfo.FileName)
 						delete(switchTitle.Updates, update.Metadata.Version)
 					} else {
-						skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "Duplicate update file. Keeping existing version.\nExisting: " + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\nDuplicate: " + filepath.Join(file.BaseFolder, file.FileName)}
+						if !hasBase {
+							skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "Duplicate update file. Keeping existing version.\nExisting: " + filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName) + "\nDuplicate: " + filepath.Join(file.BaseFolder, file.FileName)}
+						}
 						zap.S().Warnf("-->Duplicate update file found. Keeping existing version [%v] over [%v]", update.ExtendedInfo.FileName, file.FileName)
 						continue
 					}
@@ -297,7 +302,7 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 					switchTitle.LatestUpdate = metadata.Version
 				} else if metadata.Version < switchTitle.LatestUpdate {
 					// Flag only if this file is not also considered the base game
-					if !switchTitle.BaseExist || file.BaseFolder != switchTitle.File.ExtendedInfo.BaseFolder || file.FileName != switchTitle.File.ExtendedInfo.FileName {
+					if !hasBase && (!switchTitle.BaseExist || file.BaseFolder != switchTitle.File.ExtendedInfo.BaseFolder || file.FileName != switchTitle.File.ExtendedInfo.FileName) {
 						newerUpdate := switchTitle.Updates[switchTitle.LatestUpdate]
 						skipped[file] = SkippedFile{ReasonCode: REASON_OLD_UPDATE, ReasonText: "Old update file. A newer update exists locally.\nNew: " + filepath.Join(newerUpdate.ExtendedInfo.BaseFolder, newerUpdate.ExtendedInfo.FileName) + "\nOld: " + filepath.Join(file.BaseFolder, file.FileName)}
 					}
@@ -326,7 +331,9 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 
 			if dlc, ok := switchTitle.Dlc[metadata.TitleId]; ok {
 				if metadata.Version < dlc.Metadata.Version {
-					skipped[file] = SkippedFile{ReasonCode: REASON_OLD_UPDATE, ReasonText: "Old DLC file. A newer version exists locally.\nNew: " + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\nOld: " + filepath.Join(file.BaseFolder, file.FileName)}
+					if !hasBase {
+						skipped[file] = SkippedFile{ReasonCode: REASON_OLD_UPDATE, ReasonText: "Old DLC file. A newer version exists locally.\nNew: " + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\nOld: " + filepath.Join(file.BaseFolder, file.FileName)}
+					}
 					zap.S().Warnf("-->Old DLC file found [%v] and [%v]", file.FileName, dlc.ExtendedInfo.FileName)
 					continue
 				} else if metadata.Version == dlc.Metadata.Version {
@@ -335,7 +342,9 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 						zap.S().Warnf("-->Duplicate DLC found. Keeping compressed version [%v] over [%v]", file.FileName, dlc.ExtendedInfo.FileName)
 						delete(switchTitle.Dlc, dlc.Metadata.TitleId)
 					} else {
-						skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "Duplicate DLC file. Keeping existing version.\nExisting: " + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\nDuplicate: " + filepath.Join(file.BaseFolder, file.FileName)}
+						if !hasBase {
+							skipped[file] = SkippedFile{ReasonCode: REASON_DUPLICATE, ReasonText: "Duplicate DLC file. Keeping existing version.\nExisting: " + filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName) + "\nDuplicate: " + filepath.Join(file.BaseFolder, file.FileName)}
+						}
 						zap.S().Warnf("-->Duplicate DLC found. Keeping existing version [%v] over [%v]", dlc.ExtendedInfo.FileName, file.FileName)
 						continue
 					}
