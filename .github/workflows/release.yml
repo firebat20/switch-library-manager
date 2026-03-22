@@ -29,13 +29,13 @@ jobs:
           mkdir release_packages
 
           # Package Windows artifact as a zip
-          (cd src/output/windows-amd64 && zip ../../../release_packages/switch-library-manager.windows-amd64.zip *)
+          (cd src/output/windows-amd64 && zip -r ../../../release_packages/switch-library-manager.windows-amd64.zip *)
           
           # Package Linux artifact as a tar.gz
           (cd src/output/linux-amd64 && tar -czf ../../../release_packages/switch-library-manager.linux-amd64.tar.gz *)
 
           # Package Mac artifact as a zip
-          (cd src/output/darwin-amd64 && zip ../../../release_packages/switch-library-manager.darwin-amd64.zip *)
+          (cd src/output/darwin-amd64 && zip -r ../../../release_packages/switch-library-manager.darwin-amd64.zip *)
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
