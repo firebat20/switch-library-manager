@@ -279,7 +279,7 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 						}
 					}
 					switchTitle.LatestUpdate = metadata.Version
-				} else {
+				} else if metadata.Version < switchTitle.LatestUpdate {
 					// Flag only if this file is not also considered the base game
 					if !switchTitle.BaseExist || file.BaseFolder != switchTitle.File.ExtendedInfo.BaseFolder || file.FileName != switchTitle.File.ExtendedInfo.FileName {
 						newerUpdate := switchTitle.Updates[switchTitle.LatestUpdate]
