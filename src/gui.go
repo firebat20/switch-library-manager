@@ -23,6 +23,7 @@ import (
 type Pair struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+	Type  int    `json:"type"`
 }
 
 type LocalLibraryData struct {
@@ -227,15 +228,15 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 
 			} else {
 				for _, update := range v.Updates {
-					issues = append(issues, Pair{Key: filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName), Value: "base file is missing"})
+					issues = append(issues, Pair{Key: filepath.Join(update.ExtendedInfo.BaseFolder, update.ExtendedInfo.FileName), Value: "Base file is missing", Type: db.REASON_MISSING_BASE})
 				}
 				for _, dlc := range v.Dlc {
-					issues = append(issues, Pair{Key: filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName), Value: "base file is missing"})
+					issues = append(issues, Pair{Key: filepath.Join(dlc.ExtendedInfo.BaseFolder, dlc.ExtendedInfo.FileName), Value: "Base file is missing", Type: db.REASON_MISSING_BASE})
 				}
 			}
 		}
 		for k, v := range localDB.Skipped {
-			issues = append(issues, Pair{Key: filepath.Join(k.BaseFolder, k.FileName), Value: v.ReasonText})
+			issues = append(issues, Pair{Key: filepath.Join(k.BaseFolder, k.FileName), Value: v.ReasonText, Type: v.ReasonCode})
 		}
 
 		response.LibraryData = libraryData

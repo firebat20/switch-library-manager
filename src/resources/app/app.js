@@ -303,7 +303,53 @@ $(function () {
                         pagination: "local",
                         paginationSize: state.settings.gui_page_size,
                         data: state.library.issues,
+                        initialSort:[
+                            {column:"type", dir:"asc"}, // Sort by issue type by default
+                        ],
                         columns: [
+                            {title: "Type", field: "type", width: 140, hozAlign: "center", headerSort: true, formatter: function(cell) {
+                                const type = cell.getValue();
+                                let bg = "rgba(0,0,0,0.05)";
+                                let color = "#333";
+                                let text = "Unknown";
+                                
+                                // Dark mode check for pill background
+                                const isDark = document.body.classList.contains('bootstrap-dark');
+                                
+                                switch (type) {
+                                    case 0: 
+                                        text = "Unsupported"; 
+                                        bg = isDark ? "rgba(255,255,255,0.1)" : "#f3f2f1";
+                                        color = isDark ? "#ccc" : "#555";
+                                        break;
+                                    case 1: 
+                                        text = "Duplicate"; 
+                                        bg = isDark ? "rgba(0, 120, 212, 0.2)" : "rgba(0, 120, 212, 0.1)"; 
+                                        color = isDark ? "#6CB8F6" : "#0078D4"; // Fluent Blue
+                                        break;
+                                    case 2: 
+                                        text = "Obsolete"; 
+                                        bg = isDark ? "rgba(209, 52, 56, 0.2)" : "rgba(232, 17, 35, 0.1)";
+                                        color = isDark ? "#FF99A4" : "#E81123"; // Fluent Red
+                                        break;
+                                    case 3: 
+                                        text = "Unrecognised"; 
+                                        bg = isDark ? "rgba(247, 99, 12, 0.2)" : "rgba(247, 99, 12, 0.1)";
+                                        color = isDark ? "#FCE100" : "#9D5D00"; // Fluent Orange
+                                        break;
+                                    case 4: 
+                                        text = "Malformed"; 
+                                        bg = isDark ? "rgba(209, 52, 56, 0.2)" : "rgba(232, 17, 35, 0.1)";
+                                        color = isDark ? "#FF99A4" : "#E81123"; // Fluent Red
+                                        break;
+                                    case 5: 
+                                        text = "Missing Base"; 
+                                        bg = isDark ? "rgba(209, 52, 56, 0.2)" : "rgba(232, 17, 35, 0.1)";
+                                        color = isDark ? "#FF99A4" : "#E81123"; // Fluent Red
+                                        break;
+                                }
+                                return `<div style="background-color: ${bg}; color: ${color}; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 12px; display: inline-block; line-height: 1;">${text}</div>`;
+                            }},
                             {title: "File name",width:500, headerSort:false, field: "key",formatter:fluentFileFormatter,cellClick:function(e, cell){
                                     //e - the click event object
                                     //cell - cell component
