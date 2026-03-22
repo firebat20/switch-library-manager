@@ -227,7 +227,22 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 			continue
 		}
 
+		// Ensure base games are processed before updates and DLC
+		// This fixes the issue where a multi-content XCI file processes an update first,
+		// and incorrectly thinks the base file doesn't exist yet, flagging the XCI as an old update.
+		var baseMetadata []*switchfs.ContentMetaAttributes
+		var otherMetadata []*switchfs.ContentMetaAttributes
 		for _, metadata := range contentMap {
+			if strings.HasSuffix(metadata.TitleId, "000") {
+				baseMetadata = append(baseMetadata, metadata)
+			} else {
+				otherMetadata = append(otherMetadata, metadata)
+			}
+		}
+
+		orderedMetadata := append(baseMetadata, otherMetadata...)
+
+		for _, metadata := range orderedMetadata {
 
 			id := metadata.TitleId
 			idPrefix := id[0 : len(id)-3]
