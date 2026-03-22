@@ -1,14 +1,13 @@
-
 .wrapper {
-    font-family: sans-serif;
-    color: #555;
+    font-family: "Segoe UI Variable", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    color: #333;
     font-size: 14px;
     line-height: 24px;
 }
 
 h1 {
     font-size: 20px;
-    font-weight: bold;
+    font-weight: 600;
     text-align: center;
     text-transform: uppercase;
 }
@@ -20,48 +19,81 @@ h1 + p {
 }
 
 .tabs {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px; /* Fluent UI typical gap */
+    padding: 8px 24px; 
+    box-sizing: border-box;
     list-style: none;
     margin: 0;
-    padding: 0;
     border: 0;
-    vertical-align: baseline;
     position: fixed; /* Set the navbar to fixed position */
     top: 0; /* Position the navbar at the top of the page */
     width: 100%; /* Full width */
     z-index: 99;
+    background-color: rgba(255, 255, 255, 0.85); /* Fluent acrylic-ish */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
 }
 
 .tabs li {
-    float: left;
-    width: 14.28571428571429%;
+    /* Removed the stretch flex to make them compact and centered */
+    flex: 0 1 auto;
 }
 
-.tabs.hide_missing_games li {
-    width: 16.66666666666667%;
-}
 .tabs.hide_missing_games li.missing_btn {
     display: none;
 }
 
 .tabs a {
+    position: relative;
     display: block;
     text-align: center;
     text-decoration: none;
-    text-transform: uppercase;
-    color: #888;
-    padding: 15px 0;
-    border-bottom: 2px solid #888;
-    background: #f7f7f7;
+    font-weight: 500;
+    font-size: 14px;
+    color: #555;
+    padding: 6px 16px; /* Fluent UI tab padding */
+    margin: 0; 
+    border-radius: 6px; /* Rounded pill background */
+    background: transparent !important;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
-.tabs a{
-    background-color: white !important;
-    text-decoration:none !important;
+/* Windows 11 Active Indicator (small underline) */
+.tabs a::after {
+    content: "";
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    border-radius: 3px;
+    background-color: #0078D4; /* Fluent Accent Color */
+    transition: width 0.2s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-.tabs a:hover,
+.tabs a:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #111;
+    text-decoration: none !important;
+}
+
+.tabs a:active {
+    transform: scale(0.97); /* Subtle press animation */
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+
 .tabs a.active {
-    background: #2ae475 !important;
+    font-weight: 600;
+    color: #000;
+}
+
+.tabs a.active::after {
+    width: 16px; /* Show the active indicator */
 }
 .clearfix:after {
     content: "";
@@ -70,37 +102,73 @@ h1 + p {
 }
 
 .tabgroup {
-    margin-top: 52px;
+    margin-top: 64px; /* Accommodate larger navbar */
+    padding: 24px 32px; /* Breathing room from window edges */
+    max-width: 1400px; /* Constrain max width on large monitors */
+    margin-left: auto;
+    margin-right: auto;
     z-index: 0;
 }
 
-h1 {
-    font-size: 20px;
-    font-weight: bold;
-    text-align: center;
-    text-transform: uppercase;
-}
-
-h1 + p {
-    text-align: center;
-    margin: 20px 0;
-    font-size: 16px;
-}
-
-.tabs {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    vertical-align: baseline;
-}
-
 .progress-container {
-    margin: 100px auto;
-    width: 40%;
-    height: 40px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4); /* Dark overlay */
+    backdrop-filter: blur(2px); /* Slight blur for background */
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 10000; /* Float above everything else */
+    display: none; /* Toggled by jQuery */
+}
+
+.progress-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+    max-width: 480px;
     text-align: center;
-    font-size: 10px;
+    font-size: 14px;
+    background: #fff;
+    padding: 32px 32px 24px 32px; /* Card-like padding */
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+}
+
+.progress-type {
+    margin: 0 0 16px 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.progress-msg {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #666;
+    height: 36px; /* Lock height for exactly 2 lines of text */
+    line-height: 18px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-all;
+}
+
+body.bootstrap-dark .progress-modal {
+    background: #2b2b2b;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+body.bootstrap-dark .progress-type {
+    color: #f3f2f1;
+}
+
+body.bootstrap-dark .progress-msg {
+    color: #aaa;
 }
 
 
@@ -705,5 +773,378 @@ select.form-element-field {
 .center{
     text-align: center;
 }
+
+/* Fluent Design Enhancements */
+/* Alerts (InfoBar style) */
+.alert {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px !important;
+    margin-bottom: 24px !important;
+    border-radius: 4px !important;
+    border: 1px solid transparent !important;
+    border-left: 4px solid transparent !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    font-weight: 500;
+}
+
+.alert-content {
+    flex: 1;
+    line-height: 1.5;
+}
+
+.alert-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.alert-icon {
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Override center alignment from old styles */
+.alert.center {
+    text-align: left;
+}
+
+.alert-success { background-color: #F3F9F4 !important; color: #0F5C2E !important; border-left-color: #107C10 !important; }
+.alert-info { background-color: #F4F9FF !important; color: #005A9E !important; border-left-color: #0078D4 !important; }
+.alert-warning { background-color: #FFF9F5 !important; color: #9D5D00 !important; border-left-color: #F7630C !important; }
+.alert-danger { background-color: #FDF3F4 !important; color: #A4262C !important; border-left-color: #D13438 !important; }
+
+/* Fluent Close Button for Alerts */
+.fluent-close-btn {
+    background: transparent !important;
+    border: none !important;
+    font-size: 20px;
+    line-height: 1;
+    padding: 6px 10px;
+    border-radius: 4px;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.fluent-close-btn:hover {
+    opacity: 1;
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Buttons */
+.btn {
+    padding: 6px 16px !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+    border-radius: 4px !important;
+    font-weight: 600 !important;
+    transition: all 0.15s ease !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    background-color: #FDFDFD !important;
+    color: #333 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+}
+
+.btn:hover {
+    background-color: #F5F5F5 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.btn-outline-primary, .btn-primary {
+    background-color: #0078D4 !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.btn-outline-primary:hover, .btn-primary:hover {
+    background-color: #005A9E !important;
+    color: #fff !important;
+}
+
+.btn-link {
+    text-decoration: none !important;
+    color: #0078D4 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.btn-link:hover {
+    color: #005A9E !important;
+    background: rgba(0, 120, 212, 0.05) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Inputs & Form Controls */
+input[type="text"], input[type="number"], select, .form-control {
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.4) !important;
+    padding: 6px 12px !important;
+    background-color: #fff !important;
+    color: #333 !important;
+    transition: border-color 0.15s ease, border-bottom-width 0.15s ease !important;
+    font-family: inherit !important;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, select:focus, .form-control:focus {
+    outline: none !important;
+    border-color: #0078D4 !important;
+    border-bottom: 2px solid #0078D4 !important;
+    padding-bottom: 5px !important; /* Prevents text jumping */
+    box-shadow: none !important;
+}
+
+.tabulator-row .tabulator-cell {
+    padding: 8px !important;
+}
+
+.tabulator-row {
+    border-bottom: 1px solid rgba(0,0,0,0.05) !important;
+}
+
+.tabulator-row.tabulator-row-even {
+    background-color: transparent !important;
+}
+
+.tabulator-row:hover {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+    transition: background-color 0.1s ease;
+}
+
+.tabulator-cell {
+    border-right: none !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important; /* Subtle horizontal divider */
+    vertical-align: middle !important;
+}
+
+.tabulator-header {
+    background-color: #f3f2f1 !important;
+    border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+    font-weight: 600 !important;
+}
+
+.tabulator-header .tabulator-col {
+    border-right: none !important;
+    background-color: #f3f2f1 !important;
+}
+
+.tabulator-header .tabulator-col .tabulator-col-content {
+    padding: 12px 16px !important;
+}
+
+.tabulator-header .tabulator-col.tabulator-sortable:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    transition: background-color 0.2s ease;
+}
+
+.tabulator-header .tabulator-col .tabulator-col-title {
+    color: #444 !important;
+    font-size: 13px !important;
+    text-transform: none !important;
+}
+
+/* Make the filter input look modern */
+.tabulator-header input {
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    border-radius: 4px !important;
+    padding: 6px 8px !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+    background-color: #ffffff !important;
+}
+
+.tabulator-header input:focus {
+    outline: none !important;
+    border-color: #0078D4 !important;
+    border-bottom: 2px solid #0078D4 !important;
+}
+
+/* Adjust dark mode */
+body.bootstrap-dark .tabulator-row {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body.bootstrap-dark .tabulator-row:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+body.bootstrap-dark .tabulator-cell {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+body.bootstrap-dark .tabulator-header {
+    background-color: #2b2b2b !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.bootstrap-dark .tabulator-header .tabulator-col {
+    background-color: transparent !important;
+}
+
+body.bootstrap-dark .tabulator-header .tabulator-col.tabulator-sortable:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.bootstrap-dark .tabulator-header .tabulator-col .tabulator-col-title {
+    color: #eee !important;
+}
+
+body.bootstrap-dark .tabulator-header input {
+    background-color: #1a1a1a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+/* Dark mode buttons & inputs */
+body.bootstrap-dark .btn {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.bootstrap-dark .btn:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.bootstrap-dark .btn-outline-primary, body.bootstrap-dark .btn-primary {
+    background-color: #4DA8DA !important;
+    color: #000 !important;
+    border-color: transparent !important;
+}
+
+body.bootstrap-dark .btn-outline-primary:hover, body.bootstrap-dark .btn-primary:hover {
+    background-color: #6CB8F6 !important;
+}
+
+body.bootstrap-dark input[type="text"], body.bootstrap-dark input[type="number"], body.bootstrap-dark select, body.bootstrap-dark .form-control {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #fff !important;
+}
+
+body.bootstrap-dark input[type="text"]:focus, body.bootstrap-dark input[type="number"]:focus, body.bootstrap-dark select:focus, body.bootstrap-dark .form-control:focus {
+    border-bottom: 2px solid #4DA8DA !important;
+    padding-bottom: 5px !important;
+}
+
+/* Dark mode alerts (InfoBar style) */
+body.bootstrap-dark .alert-info { background-color: rgba(0, 120, 212, 0.15) !important; color: #6CB8F6 !important; }
+body.bootstrap-dark .alert-warning { background-color: rgba(247, 99, 12, 0.15) !important; color: #FCE100 !important; }
+body.bootstrap-dark .alert-success { background-color: rgba(16, 124, 16, 0.15) !important; color: #92C353 !important; }
+body.bootstrap-dark .alert-danger { background-color: rgba(209, 52, 56, 0.15) !important; color: #FF99A4 !important; }
+
+body.bootstrap-dark .fluent-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Global Dark Mode Overrides */
+body.bootstrap-dark {
+    background-color: #202020 !important;
+    color: #f3f2f1 !important;
+}
+
+body.bootstrap-dark .wrapper {
+    color: #f3f2f1 !important;
+    background-color: #202020 !important;
+}
+
+body.bootstrap-dark .tabulator {
+    background-color: #2b2b2b !important;
+    color: #e0e0e0 !important;
+}
+
+body.bootstrap-dark .tabulator-row {
+    background-color: #2b2b2b !important;
+    color: #e0e0e0 !important;
+}
+
+/* Fix for Dark Mode Background and Text */
+body.bootstrap-dark, 
+body.bootstrap-dark .wrapper, 
+body.bootstrap-dark .tabgroup {
+    background-color: #202020 !important;
+    color: #e0e0e0 !important;
+}
+
+body.bootstrap-dark h1, 
+body.bootstrap-dark h1 + p, 
+body.bootstrap-dark label {
+    color: #f3f2f1 !important;
+}
+
+/* Extra dark mode fixes for Tabs and Headers */
+body.bootstrap-dark .tabs {
+    background-color: rgba(32, 32, 32, 0.95) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+body.bootstrap-dark .tabs a {
+    color: #bbb !important;
+}
+
+body.bootstrap-dark .tabs a:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+body.bootstrap-dark .tabs a.active {
+    color: #fff !important;
+}
+
+body.bootstrap-dark .tabs a::after {
+    background-color: #4da8da !important;
+}
+
+body.bootstrap-dark .tabulator-header {
+    background-color: #2b2b2b !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.bootstrap-dark .tabulator-header .tabulator-col {
+    background-color: #2b2b2b !important;
+    color: #eee !important;
+}
+
+body.bootstrap-dark .tabulator-header .tabulator-col .tabulator-col-title {
+    color: #eee !important;
+}
+
+body.bootstrap-dark .tabulator-header .tabulator-col.tabulator-sortable:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+body.bootstrap-dark .tabulator-header input {
+    background-color: #1a1a1a !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    color: #fff !important;
+}
+
+/* Format the Issue column to wrap nicely */
+#status-table .tabulator-cell {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.4 !important;
+}
+
+body.bootstrap-dark #status-table .tabulator-cell strong[style*="color:#0078D4"] {
+    color: #6CB8F6 !important; /* Lighter blue in dark mode */
+}
+body.bootstrap-dark #status-table .tabulator-cell strong[style*="color:#E81123"] {
+    color: #FF99A4 !important; /* Lighter red in dark mode */
+}
+
+
 
 

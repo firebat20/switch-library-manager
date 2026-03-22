@@ -28,7 +28,7 @@ func DeleteOldUpdates(baseFolder string, localDB *db.LocalSwitchFilesDB, updateP
 		case db.REASON_DUPLICATE:
 			fileToRemove := filepath.Join(k.BaseFolder, k.FileName)
 			if updateProgress != nil {
-				updateProgress.UpdateProgress(0, 0, "deleting "+fileToRemove)
+				updateProgress.UpdateProgress(0, 0, "Deleting "+fileToRemove)
 			}
 			zap.S().Infof("Deleting file: %v \n", fileToRemove)
 			err := os.Remove(fileToRemove)
@@ -40,7 +40,7 @@ func DeleteOldUpdates(baseFolder string, localDB *db.LocalSwitchFilesDB, updateP
 		case db.REASON_OLD_UPDATE:
 			fileToRemove := filepath.Join(k.BaseFolder, k.FileName)
 			if updateProgress != nil {
-				updateProgress.UpdateProgress(0, 0, "deleting "+fileToRemove)
+				updateProgress.UpdateProgress(0, 0, "Deleting "+fileToRemove)
 			}
 			zap.S().Infof("Deleting file: %v \n", fileToRemove)
 			err := os.Remove(fileToRemove)
@@ -55,14 +55,14 @@ func DeleteOldUpdates(baseFolder string, localDB *db.LocalSwitchFilesDB, updateP
 
 	if i != 0 && settings.ReadSettings(baseFolder).OrganizeOptions.DeleteEmptyFolders {
 		if updateProgress != nil {
-			updateProgress.UpdateProgress(i, i+1, "deleting empty folders... (can take 1-2min)")
+			updateProgress.UpdateProgress(i, i+1, "Deleting empty folders... (can take 1-2min)")
 		}
 		err := deleteEmptyFolders(baseFolder)
 		if err != nil {
 			zap.S().Errorf("Failed to delete empty folders [%v]\n", err)
 		}
 		if updateProgress != nil {
-			updateProgress.UpdateProgress(i+1, i+1, "deleting empty folders... (can take 1-2min)")
+			updateProgress.UpdateProgress(i+1, i+1, "Deleting empty folders... (can take 1-2min)")
 		}
 	}
 }
@@ -285,7 +285,7 @@ func OrganizeByFolders(baseFolder string,
 	if options.DeleteEmptyFolders {
 		if updateProgress != nil {
 			i += 1
-			updateProgress.UpdateProgress(i, tasksSize, "deleting empty folders... (can take 1-2min)")
+			updateProgress.UpdateProgress(i, tasksSize, "Deleting empty folders... (can take 1-2min)")
 		}
 		err := deleteEmptyFolders(baseFolder)
 		if err != nil {
@@ -293,12 +293,12 @@ func OrganizeByFolders(baseFolder string,
 		}
 		if updateProgress != nil {
 			i += 1
-			updateProgress.UpdateProgress(i, tasksSize, "done")
+			updateProgress.UpdateProgress(i, tasksSize, "Done")
 		}
 	} else {
 		if updateProgress != nil {
 			i += 2
-			updateProgress.UpdateProgress(i, tasksSize, "done")
+			updateProgress.UpdateProgress(i, tasksSize, "Done")
 		}
 	}
 }

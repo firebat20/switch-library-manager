@@ -67,6 +67,10 @@ type AppSettings struct {
 	OrganizeOptions        OrganizeOptions `json:"organize_options"`
 	ScanRecursively        bool            `json:"scan_recursively"`
 	GuiPagingSize          int             `json:"gui_page_size"`
+	DarkMode               bool            `json:"dark_mode"`
+	WindowWidth            int             `json:"window_width,omitempty"`
+	WindowHeight           int             `json:"window_height,omitempty"`
+	WindowMaximized        bool            `json:"window_maximized,omitempty"`
 	IgnoreDLCUpdates       bool            `json:"ignore_dlc_updates"`
 	IgnoreDLCTitleIds      []string        `json:"ignore_dlc_title_ids"`
 	IgnoreUpdateTitleIds   []string        `json:"ignore_update_title_ids"`
@@ -104,6 +108,13 @@ func ReadSettings(baseFolder string) *AppSettings {
 }
 
 func verifySettings(baseFolder string, settings *AppSettings) *AppSettings {
+	if settings.WindowWidth == 0 {
+		settings.WindowWidth = 1200
+	}
+	if settings.WindowHeight == 0 {
+		settings.WindowHeight = 600
+	}
+
 	// check so titles json url is set, if not revert to default
 	if settings.TitlesJsonUrl == "" {
 		settings.TitlesJsonUrl = DEFAULT_TITLES_JSON_URL
@@ -145,6 +156,9 @@ func saveDefaultSettings(baseFolder string) *AppSettings {
 		HideMissingGames:       false,
 		HideDemoGames:          false,
 		ScanRecursively:        true,
+		WindowWidth:            1200,
+		WindowHeight:           600,
+		WindowMaximized:        false,
 		Debug:                  false,
 		OrganizeOptions: OrganizeOptions{
 			RenameFiles:         false,
@@ -160,6 +174,7 @@ func saveDefaultSettings(baseFolder string) *AppSettings {
 			ProcessWhenMissingBaseGame: false,
 			PrioritizeCompressed:       true,
 		},
+		DarkMode: true,
 	}
 	return SaveSettings(settingsInstance, baseFolder)
 }

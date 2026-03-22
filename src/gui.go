@@ -93,6 +93,8 @@ func (g *GUI) Start() {
 	g.localDbManager = localDbManager
 	defer localDbManager.Close()
 
+	settingsObj := settings.ReadSettings(g.baseFolder)
+
 	// Run bootstrap
 	if err := bootstrap.Run(bootstrap.Options{
 		Asset:    Asset,
@@ -117,60 +119,11 @@ func (g *GUI) Start() {
 				AlwaysOnTop:     astikit.BoolPtr(true),
 				BackgroundColor: astikit.StrPtr("#333"),
 				Center:          astikit.BoolPtr(true),
-				Height:          astikit.IntPtr(600),
-				Width:           astikit.IntPtr(1200),
+				Height:          astikit.IntPtr(settingsObj.WindowHeight),
+				Width:           astikit.IntPtr(settingsObj.WindowWidth),
 				WebPreferences:  &astilectron.WebPreferences{EnableRemoteModule: astikit.BoolPtr(true)},
 			},
 		}},
-		MenuOptions: []*astilectron.MenuItemOptions{
-			{
-				SubMenu: []*astilectron.MenuItemOptions{
-					{
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "C"},
-						Role:        astilectron.MenuItemRoleCopy,
-					},
-					{
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "V"},
-						Role:        astilectron.MenuItemRolePaste,
-					},
-					{Role: astilectron.MenuItemRoleClose},
-				},
-			},
-			{
-				Label: astikit.StrPtr("File"),
-				SubMenu: []*astilectron.MenuItemOptions{
-					{
-						Label:       astikit.StrPtr("Rescan"),
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "R"},
-						OnClick: func(e astilectron.Event) (deleteListener bool) {
-							g.state.window.SendMessage(Message{Name: "rescan", Payload: ""}, func(m *astilectron.EventMessage) {})
-							return
-						},
-					},
-					{
-						Label: astikit.StrPtr("Hard rescan"),
-						OnClick: func(e astilectron.Event) (deleteListener bool) {
-							_ = localDbManager.ClearScanData()
-							g.state.window.SendMessage(Message{Name: "rescan", Payload: ""}, func(m *astilectron.EventMessage) {})
-							return
-						},
-					},
-				},
-			},
-			{
-				Label: astikit.StrPtr("Debug"),
-				SubMenu: []*astilectron.MenuItemOptions{
-					{
-						Label:       astikit.StrPtr("Open DevTools"),
-						Accelerator: &astilectron.Accelerator{"CommandOrControl", "D"},
-						OnClick: func(e astilectron.Event) (deleteListener bool) {
-							g.state.window.OpenDevTools()
-							return
-						},
-					},
-				},
-			},
-		},
 	}); err != nil {
 		g.sugarLogger.Error(fmt.Errorf("running bootstrap failed: %w", err))
 		log.Fatal(err)
@@ -212,6 +165,9 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 		missingGames := g.getMissingGames()
 		msg, _ := json.Marshal(missingGames)
 		g.state.window.SendMessage(Message{Name: "missingGames", Payload: string(msg)}, func(m *astilectron.EventMessage) {})
+	case "checkMaximized":
+		settingsObj := settings.ReadSettings(g.baseFolder)
+		retValue = strconv.FormatBool(settingsObj.WindowMaximized)
 	case "updateLocalLibrary":
 		ignoreCache, _ := strconv.ParseBool(msg.Payload)
 		localDB, err := g.buildLocalDB(g.localDbManager, ignoreCache)
@@ -297,6 +253,9 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 			}
 			g.state.switchDB = switchDb
 		}
+	case "hardRescan":
+		_ = g.localDbManager.ClearScanData()
+		g.state.window.SendMessage(Message{Name: "rescan", Payload: ""}, func(m *astilectron.EventMessage) {})
 	case "missingUpdates":
 		retValue = g.getMissingUpdates()
 	case "missingDlc":
@@ -402,7 +361,7 @@ func (g *GUI) buildSwitchDb() (*db.SwitchTitlesDB, error) {
 
 	settings.SaveSettings(settingsObj, g.baseFolder)
 
-	g.UpdateProgress(3, 4, "Processing switch titles and updates ...")
+	g.UpdateProgress(3, 4, "Processing switch titles and updates")
 	switchTitleDB, err := db.CreateSwitchTitleDB(titleFile, versionsFile)
 	g.UpdateProgress(4, 4, "Finishing up...")
 	return switchTitleDB, err
