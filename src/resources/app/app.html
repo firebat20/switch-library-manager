@@ -138,11 +138,11 @@
         </div>
         <div class="form-row">
             <label>Ignore Update Title IDs (One per line)</label>
-            <textarea class="form-control" name="ignore_update_title_ids" rows="4" placeholder="0100000000000000&#10;0100000000000800">{{if settings.ignore_update_title_ids}}{{:settings.ignore_update_title_ids.join('\n')}}{{/if}}</textarea>
+            <textarea class="form-control" name="ignore_update_title_ids" rows="4" placeholder="0100000000000000&#10;0100000000000800">{{:ignore_update_title_ids_str}}</textarea>
         </div>
         <div class="form-row">
             <label>Ignore DLC Title IDs (One per line)</label>
-            <textarea class="form-control" name="ignore_dlc_title_ids" rows="4" placeholder="0100000000000001&#10;0100000000000002">{{if settings.ignore_dlc_title_ids}}{{:settings.ignore_dlc_title_ids.join('\n')}}{{/if}}</textarea>
+            <textarea class="form-control" name="ignore_dlc_title_ids" rows="4" placeholder="0100000000000001&#10;0100000000000002">{{:ignore_dlc_title_ids_str}}</textarea>
         </div>
 
         <div style="margin-top: 32px; display:flex; justify-content: flex-end;">

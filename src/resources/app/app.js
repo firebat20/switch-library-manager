@@ -216,7 +216,11 @@ $(function () {
             $(target).show();
 
             if (target === "#settings") {
-                let settingsHtml = $(target + "Template").render({settings: state.settings})
+                let settingsHtml = $(target + "Template").render({
+                    settings: state.settings,
+                    ignore_update_title_ids_str: state.settings.ignore_update_title_ids ? state.settings.ignore_update_title_ids.join('\n') : "",
+                    ignore_dlc_title_ids_str: state.settings.ignore_dlc_title_ids ? state.settings.ignore_dlc_title_ids.join('\n') : ""
+                });
                 $(target).html(settingsHtml);
             } else if (target === "#organize") {
                 let html = $(target + "Template").render({folder: state.settings.folder,settings:state.settings})
