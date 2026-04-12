@@ -562,6 +562,56 @@ $(function () {
             });
         });
 
+        // Library & Issues Tab Organize Buttons
+        $("body").on("click", ".library-organize-action", e => {
+            e.preventDefault();
+            if (state.settings.organize_options.create_folder_per_game === false &&
+                state.settings.organize_options.rename_files === false){
+                dialog.showMessageBox(null, {
+                    type: 'info',
+                    buttons: ['Ok'],
+                    defaultId: 0,
+                    title: 'Library organization is turned off',
+                    message: 'Both rename files and create folders are disabled.',
+                    detail: "You must enable at least one of these options in the Organize tab to proceed."
+                });
+                return;
+            }
+
+            const options = {
+                type: 'warning',
+                buttons: ['Yes', 'No'],
+                defaultId: 0,
+                title: 'Confirmation',
+                message: 'Are you sure you want to begin library organization?',
+                detail: 'This action will modify your local library files based on your current settings.',
+            };
+
+            dialog.showMessageBox(null, options).then( (r) => {
+                if (r.response === 0) {
+                    $('.tabgroup > div').hide();
+                    $(".progress-container").show();
+                    $(".progress-type").text("Organizing local library...");
+
+                    sendMessage("organize", "", (r => {
+                        $(".progress-container").hide();
+                        state.library = undefined;
+                        state.updates = undefined;
+                        state.dlc = undefined;
+                        loadTab("#library");
+                        scanLocalFolder(true);
+                        dialog.showMessageBox(null, {
+                            type: 'info',
+                            buttons: ['Ok'],
+                            defaultId: 0,
+                            title: 'Success',
+                            message: 'Operation completed successfully'
+                        });
+                    }));
+                }
+            });
+        });
+
         // Dark Mode Toggle
         $("body").on("click", "#toggle-dark-mode", e => {
             e.preventDefault();
