@@ -33,13 +33,12 @@
         <li class="missing_btn"><a href="#missing">Missing games</a></li>
         <li><a href="#updates">Missing updates</a></li>
         <li><a href="#dlc">Missing DLC</a></li>
-        <li><a href="#organize">Organize</a></li>
         <li><a href="#status">Issues</a></li>
         <li><a href="#settings">Settings</a></li>
         <!-- Add Dark Mode Toggle and Rescan Buttons -->
         <li style="position: absolute; right: 24px; display: flex; gap: 4px;">
           <a href="#" id="btn-rescan" title="Rescan Library" style="padding: 6px 10px; font-size: 16px; border-bottom: none !important;">🔄</a>
-          <a href="#" id="btn-hard-rescan" title="Hard Rescan (Clear Cache)" style="padding: 6px 10px; font-size: 16px; border-bottom: none !important;">🗑️</a>
+          <a href="#" id="btn-hard-rescan" title="Hard Rescan (Clear Cache & Deep Scan)" style="padding: 6px 10px; font-size: 16px; border-bottom: none !important;">🗑️</a>
           <a href="#" id="toggle-dark-mode" title="Toggle Dark Mode" style="padding: 6px 10px; font-size: 16px; border-bottom: none !important;">🌙</a>
         </li>
       </ul>
@@ -63,18 +62,93 @@
         <div id="updates"></div>
         <div id="missing"></div>
         <div id="dlc"></div>
-        <div id="organize"></div>
         <div id="status"></div>
         <div id="settings"></div>
       </section>
     </div>
 
     <script id="settingsTemplate" type="text/x-jsrender">
-      <div class="alert alert-success" role="alert">
-          <div class="alert-icon">✅</div>
-          <div class="alert-content">You can edit the settings by modifying the settings.json file, and reloading the app.</div>
-      </div>
-      <pre><code class="settings-json">{{:code}}</code></pre>
+      <form id="settings-form" class="fluent-form">
+        <h3 class="fluent-heading">General</h3>
+        <div class="form-row">
+            <label>Library Folder</label>
+            <div style="display:flex; gap:8px;">
+                <input type="text" class="form-control" name="folder" value="{{:settings.folder}}" readonly style="flex:1; background-color: rgba(0,0,0,0.02) !important;">
+                <button type="button" class="btn btn-outline-primary folder-set">Change</button>
+            </div>
+        </div>
+        <div class="form-row">
+            <label>Prod.keys Path</label>
+            <input type="text" class="form-control" name="prod_keys" value="{{:settings.prod_keys}}" placeholder="Path to prod.keys file">
+        </div>
+        <div class="form-row">
+            <label>Items per Page</label>
+            <select class="form-control" name="gui_page_size">
+                <option value="50" {{if settings.gui_page_size == 50}}selected{{/if}}>50 rows</option>
+                <option value="100" {{if settings.gui_page_size == 100}}selected{{/if}}>100 rows</option>
+                <option value="200" {{if settings.gui_page_size == 200}}selected{{/if}}>200 rows</option>
+                <option value="500" {{if settings.gui_page_size == 500}}selected{{/if}}>500 rows</option>
+            </select>
+        </div>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="scan_recursively" name="scan_recursively" {{if settings.scan_recursively}}checked{{/if}}>
+            <label for="scan_recursively">Scan folders recursively</label>
+        </div>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="debug" name="debug" {{if settings.debug}}checked{{/if}}>
+            <label for="debug">Enable Debug Logging</label>
+        </div>
+
+        <h3 class="fluent-heading">Missing Content Tracking</h3>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="check_for_missing_updates" name="check_for_missing_updates" {{if settings.check_for_missing_updates}}checked{{/if}}>
+            <label for="check_for_missing_updates">Check for missing updates</label>
+        </div>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="check_for_missing_dlc" name="check_for_missing_dlc" {{if settings.check_for_missing_dlc}}checked{{/if}}>
+            <label for="check_for_missing_dlc">Check for missing DLC</label>
+        </div>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="hide_missing_games" name="hide_missing_games" {{if settings.hide_missing_games}}checked{{/if}}>
+            <label for="hide_missing_games">Hide missing games from lists completely</label>
+        </div>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="hide_demo_games" name="hide_demo_games" {{if settings.hide_demo_games}}checked{{/if}}>
+            <label for="hide_demo_games">Hide demo games</label>
+        </div>
+        <div class="form-row checkbox-row">
+            <input type="checkbox" id="ignore_dlc_updates" name="ignore_dlc_updates" {{if settings.ignore_dlc_updates}}checked{{/if}}>
+            <label for="ignore_dlc_updates">Ignore DLC updates</label>
+        </div>
+
+        <h3 class="fluent-heading">Database URLs</h3>
+        <div class="form-row">
+            <label>Titles JSON URL</label>
+            <input type="text" class="form-control" name="titles_json_url" value="{{:settings.titles_json_url}}">
+        </div>
+        <div class="form-row">
+            <label>Versions JSON URL</label>
+            <input type="text" class="form-control" name="versions_json_url" value="{{:settings.versions_json_url}}">
+        </div>
+
+        <h3 class="fluent-heading">Ignore Lists (Comma-separated)</h3>
+        <div class="form-row">
+            <label>Ignore File Types</label>
+            <input type="text" class="form-control" name="ignore_file_types" value="{{if settings.ignore_file_types}}{{:settings.ignore_file_types.join(',')}}{{/if}}" placeholder="e.g. .txt, .pdf">
+        </div>
+        <div class="form-row">
+            <label>Ignore Update Title IDs</label>
+            <input type="text" class="form-control" name="ignore_update_title_ids" value="{{if settings.ignore_update_title_ids}}{{:settings.ignore_update_title_ids.join(',')}}{{/if}}">
+        </div>
+        <div class="form-row">
+            <label>Ignore DLC Title IDs</label>
+            <input type="text" class="form-control" name="ignore_dlc_title_ids" value="{{if settings.ignore_dlc_title_ids}}{{:settings.ignore_dlc_title_ids.join(',')}}{{/if}}">
+        </div>
+
+        <div style="margin-top: 32px; display:flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+      </form>
     </script>
 
     <script id="missingTemplate" type="text/x-jsrender">
@@ -115,6 +189,7 @@
                     {{if scanFolders && scanFolders.length}}(and {{:scanFolders.length}} additional folders){{/if}}
                   </div>
                   <div class="alert-actions">
+                    <button type="button" class="btn btn-primary library-organize-action">Organize Library</button>
                     <button type="button" class="btn btn-outline-primary folder-set">Change</button>
                     <button type="button" class="btn btn-outline-primary folder-set">Add</button>
                     <button type="button" class="btn btn-link export-btn">Export CSV</button>
@@ -236,6 +311,7 @@
                    <div class="alert-icon">⚠️</div>
                    <div class="alert-content"><strong>{{:library.length}}</strong> files were skipped during scan, additional details below:</div>
                    <div class="alert-actions">
+                       <button type="button" class="btn btn-primary library-organize-action">Organize & Fix</button>
                        <button type="button" class="btn btn-outline-primary export-btn">Export CSV</button>
                    </div>
                </div>
@@ -262,85 +338,76 @@
        <div class="alert alert-info" role="alert">
            <div class="alert-icon">ℹ️</div>
            <div class="alert-content">
-               You can automatically organize your library into a folder per game structure, 
-               or just rename the files to a standard way. The options below can be customized through the settings.json file.
+               Configure your organization settings below and click 'Organize Library' to save and apply them.
            </div>
        </div>
-       <div class="container">
-          <form>
-              <div class="form-group row">
-                <label for="baseFolder" class="col-sm-2 col-form-label">Base folder</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="baseFolder" value="{{:folder}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Create folders</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.create_folder_per_game}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Create Updates folders</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.updates_folder}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Create DLC folders</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.dlc_folder}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Rename files</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.rename_files}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Delete empty folders</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.delete_empty_folders}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Delete old update files</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.delete_old_update_files}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Process files when base game is missing</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.process_when_missing_base_game}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">Folder name template</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.folder_name_template}}">
-                </div>
-              </div>
-              <div class="form-group row">
-                <label for="createFolders" class="col-sm-2 col-form-label">File name template</label>
-                <div class="col-sm-10">
-                  <input type="text" readonly class="form-control-plaintext" id="createFolders" value="{{:settings.organize_options.file_name_template}}">
-                </div>
-              </div>
-                 <button type="submit" class="btn btn-primary library-organize-action">Begin library organization</button>
-            </div>
-          </form>
-       </div>
+       
+       <form id="organize-form" class="fluent-form">
+          <h3 class="fluent-heading">Organization Rules</h3>
+          
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="create_folder_per_game" name="create_folder_per_game" {{if settings.organize_options.create_folder_per_game}}checked{{/if}}>
+            <label for="create_folder_per_game">Create a folder per game</label>
+          </div>
+          <div class="form-row" style="margin-left: 32px;">
+            <label>Folder Name Template</label>
+            <input type="text" class="form-control" name="folder_name_template" value="{{:settings.organize_options.folder_name_template}}">
+          </div>
+          
+          <div class="form-row checkbox-row" style="margin-top: 16px;">
+            <input type="checkbox" id="rename_files" name="rename_files" {{if settings.organize_options.rename_files}}checked{{/if}}>
+            <label for="rename_files">Rename files to standard format</label>
+          </div>
+          <div class="form-row" style="margin-left: 32px;">
+            <label>File Name Template</label>
+            <input type="text" class="form-control" name="file_name_template" value="{{:settings.organize_options.file_name_template}}">
+          </div>
 
-        {{else}}
-            <div class="alert center alert-warning" role="alert">
-                Local games folder is not set, please set the folder to get started
-            </div>
-            <div class="center">
-                  <button type="button" class="btn btn-outline-primary folder-set">Set Folder</button>
-            </div>
-        {{/if}}
+          <h3 class="fluent-heading">Folder Structure</h3>
+          <div class="form-row">
+            <label>Updates Folder Name (Optional)</label>
+            <input type="text" class="form-control" name="updates_folder" value="{{:settings.organize_options.updates_folder}}" placeholder="Leave blank to mix with base games">
+          </div>
+          <div class="form-row">
+            <label>DLC Folder Name (Optional)</label>
+            <input type="text" class="form-control" name="dlc_folder" value="{{:settings.organize_options.dlc_folder}}" placeholder="Leave blank to mix with base games">
+          </div>
+
+          <h3 class="fluent-heading">Cleanup & Advanced</h3>
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="delete_empty_folders" name="delete_empty_folders" {{if settings.organize_options.delete_empty_folders}}checked{{/if}}>
+            <label for="delete_empty_folders">Delete empty folders after organizing</label>
+          </div>
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="delete_old_update_files" name="delete_old_update_files" {{if settings.organize_options.delete_old_update_files}}checked{{/if}}>
+            <label for="delete_old_update_files">Delete old update files</label>
+          </div>
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="prioritize_compressed" name="prioritize_compressed" {{if settings.organize_options.prioritize_compressed}}checked{{/if}}>
+            <label for="prioritize_compressed">Prioritize compressed files (Keep .xcz/.nsz over duplicates)</label>
+          </div>
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="process_when_missing_base_game" name="process_when_missing_base_game" {{if settings.organize_options.process_when_missing_base_game}}checked{{/if}}>
+            <label for="process_when_missing_base_game">Process updates/DLC even if base game is missing</label>
+          </div>
+          <div class="form-row checkbox-row">
+            <input type="checkbox" id="switch_safe_file_names" name="switch_safe_file_names" {{if settings.organize_options.switch_safe_file_names}}checked{{/if}}>
+            <label for="switch_safe_file_names">Use Switch-safe file/folder names (Strip special characters)</label>
+          </div>
+          
+          <div style="margin-top: 32px; display:flex; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">Save & Organize Library</button>
+          </div>
+       </form>
+      {{else}}
+          <div class="alert alert-warning" role="alert">
+              <div class="alert-icon">ℹ️</div>
+              <div class="alert-content">Local games folder is not set, please set the folder to get started</div>
+              <div class="alert-actions">
+                  <button type="button" class="btn btn-primary folder-set">Set Folder</button>
+              </div>
+          </div>
+      {{/if}}
     </script>
   </body>
 </html>

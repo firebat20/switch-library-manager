@@ -1049,6 +1049,111 @@ body.bootstrap-dark .fluent-close-btn:hover {
     background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* Settings & Forms */
+.fluent-form {
+    max-width: 900px;
+    margin: 0 auto 40px auto;
+    padding: 32px 40px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+
+body.bootstrap-dark .fluent-form {
+    background: #2b2b2b;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.fluent-heading {
+    margin-top: 32px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding-bottom: 8px;
+    color: #0078D4;
+}
+
+body.bootstrap-dark .fluent-heading {
+    border-bottom-color: rgba(255,255,255,0.06);
+    color: #6CB8F6;
+}
+
+.fluent-heading:first-child {
+    margin-top: 0;
+}
+
+.form-row {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-row label {
+    font-weight: 500;
+    font-size: 14px;
+    color: #555;
+}
+
+body.bootstrap-dark .form-row label {
+    color: #ccc;
+}
+
+.checkbox-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(0,0,0,0.4);
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    transition: all 0.1s ease;
+    flex-shrink: 0;
+}
+
+body.bootstrap-dark .checkbox-row input[type="checkbox"] {
+    border-color: rgba(255,255,255,0.4);
+}
+
+.checkbox-row input[type="checkbox"]:checked {
+    background-color: #0078D4;
+    border-color: #0078D4;
+}
+
+body.bootstrap-dark .checkbox-row input[type="checkbox"]:checked {
+    background-color: #4DA8DA;
+    border-color: #4DA8DA;
+}
+
+.checkbox-row input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    left: 3px;
+    top: -1px;
+}
+
+body.bootstrap-dark .checkbox-row input[type="checkbox"]:checked::after {
+    color: #000;
+}
+
+.checkbox-row label {
+    margin: 0;
+    cursor: pointer;
+}
+
 /* Global Dark Mode Overrides */
 body.bootstrap-dark {
     background-color: #202020 !important;
@@ -1070,7 +1175,109 @@ body.bootstrap-dark .tabulator-row {
     color: #e0e0e0 !important;
 }
 
-/* Fix for Dark Mode Background and Text */
+/* Settings & Forms */
+.fluent-form {
+    max-width: 900px;
+    margin: 0 auto 40px auto;
+    padding: 32px 40px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+
+body.bootstrap-dark .fluent-form {
+    background: #2b2b2b;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.fluent-heading {
+    margin-top: 32px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding-bottom: 8px;
+    color: #0078D4;
+}
+
+body.bootstrap-dark .fluent-heading {
+    border-bottom-color: rgba(255,255,255,0.06);
+    color: #6CB8F6;
+}
+
+.fluent-heading:first-child {
+    margin-top: 0;
+}
+
+.form-row {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-row label {
+    font-weight: 500;
+    font-size: 14px;
+    color: #555;
+}
+
+body.bootstrap-dark .form-row label {
+    color: #ccc;
+}
+
+.checkbox-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.checkbox-row input[type="checkbox"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba(0,0,0,0.4);
+    border-radius: 4px;
+    background-color: transparent;
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    transition: all 0.1s ease;
+    flex-shrink: 0;
+}
+
+body.bootstrap-dark .checkbox-row input[type="checkbox"] {
+    border-color: rgba(255,255,255,0.4);
+}
+
+.checkbox-row input[type="checkbox"]:checked {
+    background-color: #0078D4;
+    border-color: #0078D4;
+}
+
+body.bootstrap-dark .checkbox-row input[type="checkbox"]:checked {
+    background-color: #4DA8DA;
+    border-color: #4DA8DA;
+}
+
+.checkbox-row input[type="checkbox"]:checked::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-size: 14px;
+    left: 3px;
+    top: -1px;
+}
+
+body.bootstrap-dark .checkbox-row input[type="checkbox"]:checked::after {
+    color: #000;
+}
+
+.checkbox-row label {
+    margin: 0;
+    cursor: pointer;
+}
 body.bootstrap-dark, 
 body.bootstrap-dark .wrapper, 
 body.bootstrap-dark .tabgroup {

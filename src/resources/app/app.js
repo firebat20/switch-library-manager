@@ -216,10 +216,8 @@ $(function () {
             $(target).show();
 
             if (target === "#settings") {
-                let settingsJSON = JSON.stringify(state.settings, null, 2)
-                let settingsHtml = $(target + "Template").render({code: settingsJSON})
+                let settingsHtml = $(target + "Template").render({settings: state.settings})
                 $(target).html(settingsHtml);
-                //  asticode.loader.hide()
             } else if (target === "#organize") {
                 let html = $(target + "Template").render({folder: state.settings.folder,settings:state.settings})
                 $(target).html(html);
@@ -449,6 +447,115 @@ $(function () {
             currTable.download("csv", "export.csv", {}, "all");
         });
 
+        // Settings Form Submit
+        $("body").on("submit", "#settings-form", function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            state.settings.prod_keys = formData.get("prod_keys");
+            state.settings.gui_page_size = parseInt(formData.get("gui_page_size"));
+            state.settings.scan_recursively = formData.has("scan_recursively");
+            state.settings.debug = formData.has("debug");
+            
+            state.settings.check_for_missing_updates = formData.has("check_for_missing_updates");
+            state.settings.check_for_missing_dlc = formData.has("check_for_missing_dlc");
+            state.settings.hide_missing_games = formData.has("hide_missing_games");
+            state.settings.hide_demo_games = formData.has("hide_demo_games");
+            state.settings.ignore_dlc_updates = formData.has("ignore_dlc_updates");
+            
+            state.settings.titles_json_url = formData.get("titles_json_url");
+            state.settings.versions_json_url = formData.get("versions_json_url");
+            
+            const splitIgnore = (val) => val ? val.split(',').map(s => s.trim()).filter(s => s) : [];
+            state.settings.ignore_file_types = splitIgnore(formData.get("ignore_file_types"));
+            state.settings.ignore_update_title_ids = splitIgnore(formData.get("ignore_update_title_ids"));
+            state.settings.ignore_dlc_title_ids = splitIgnore(formData.get("ignore_dlc_title_ids"));
+            
+            const btn = $(this).find("button[type='submit']");
+            const originalText = btn.text();
+            btn.text("Saving...").prop("disabled", true);
+            
+            sendMessage("saveSettings", JSON.stringify(state.settings), function() {
+                btn.text("Saved!").css({"background-color": "#107C10", "color": "white", "border-color": "transparent"});
+                setTimeout(() => {
+                    btn.text(originalText).css({"background-color": "", "color": "", "border-color": ""}).prop("disabled", false);
+                }, 2000);
+                
+                if(state.settings.hide_missing_games){
+                    document.getElementById("tab_btns").classList.add("hide_missing_games");
+                } else {
+                    document.getElementById("tab_btns").classList.remove("hide_missing_games");
+                }
+            });
+        });
+
+        // Organize Form Submit
+        $("body").on("submit", "#organize-form", function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            state.settings.organize_options.create_folder_per_game = formData.has("create_folder_per_game");
+            state.settings.organize_options.rename_files = formData.has("rename_files");
+            state.settings.organize_options.delete_empty_folders = formData.has("delete_empty_folders");
+            state.settings.organize_options.delete_old_update_files = formData.has("delete_old_update_files");
+            state.settings.organize_options.process_when_missing_base_game = formData.has("process_when_missing_base_game");
+            state.settings.organize_options.switch_safe_file_names = formData.has("switch_safe_file_names");
+            state.settings.organize_options.prioritize_compressed = formData.has("prioritize_compressed");
+            
+            state.settings.organize_options.folder_name_template = formData.get("folder_name_template");
+            state.settings.organize_options.file_name_template = formData.get("file_name_template");
+            state.settings.organize_options.updates_folder = formData.get("updates_folder");
+            state.settings.organize_options.dlc_folder = formData.get("dlc_folder");
+            
+            sendMessage("saveSettings", JSON.stringify(state.settings), function() {
+                if (state.settings.organize_options.create_folder_per_game === false &&
+                    state.settings.organize_options.rename_files === false){
+                    dialog.showMessageBox(null, {
+                        type: 'info',
+                        buttons: ['Ok'],
+                        defaultId: 0,
+                        title: 'Library organization is turned off',
+                        message: 'Both rename files and create folders are disabled.',
+                        detail: "You must enable at least one of these options to organize."
+                    });
+                    return;
+                }
+
+                const options = {
+                    type: 'warning',
+                    buttons: ['Yes', 'No'],
+                    defaultId: 0,
+                    title: 'Confirmation',
+                    message: 'Are you sure you want to begin library organization?',
+                    detail: 'This action will modify your local library files based on the settings you just chose.',
+                };
+
+                dialog.showMessageBox(null, options).then( (r) => {
+                    if (r.response === 0) {
+                        $('.tabgroup > div').hide();
+                        $(".progress-container").show();
+                        $(".progress-type").text("Organizing local library...");
+
+                        sendMessage("organize", "", (r => {
+                            $(".progress-container").hide();
+                            state.library = undefined;
+                            state.updates = undefined;
+                            state.dlc = undefined;
+                            loadTab("#library");
+                            scanLocalFolder(true);
+                            dialog.showMessageBox(null, {
+                                type: 'info',
+                                buttons: ['Ok'],
+                                defaultId: 0,
+                                title: 'Success',
+                                message: 'Operation completed successfully'
+                            });
+                        }));
+                    }
+                });
+            });
+        });
+
         // Dark Mode Toggle
         $("body").on("click", "#toggle-dark-mode", e => {
             e.preventDefault();
@@ -499,56 +606,7 @@ $(function () {
             });
         });
 
-        $("body").on("click", ".library-organize-action", e => {
-            e.preventDefault();
-            if (state.settings.organize_options.create_folder_per_game === false &&
-                state.settings.organize_options.rename_files === false){
-                dialog.showMessageBox(null, {
-                    type: 'info',
-                    buttons: ['Ok'],
-                    defaultId: 0,
-                    title: 'Library organization is turned off',
-                    message: 'Please update settings.json to enable this feature',
-                    detail: "You should set 'rename_files' and/or 'create_folder_per_game' to 'true' "
-                });
-                return
-            }
-            const options = {
-                type: 'warning',
-                buttons: ['Yes', 'No'],
-                defaultId: 0,
-                title: 'Confirmation',
-                message: 'Are you sure you want to begin library organization?',
-                detail: 'This action will modify your local library files',
-            };
 
-            dialog.showMessageBox(null, options).then( (r) => {
-
-                if (r.response === 0) {
-                    //show progress
-                    $('.tabgroup > div').hide();
-                    $(".progress-container").show();
-                    $(".progress-type").text("Organizing local library...");
-
-                    sendMessage("organize", "", (r => {
-                        $(".progress-container").hide();
-                        state.library = undefined;
-                        state.updates = undefined;
-                        state.dlc = undefined;
-                        loadTab("#library");
-                        scanLocalFolder(true)
-                        dialog.showMessageBox(null, {
-                            type: 'info',
-                            buttons: ['Ok'],
-                            defaultId: 0,
-                            title: 'Success',
-                            message: 'Operation completed successfully'
-                        })
-                    }))
-                }
-            });
-
-        });
 
         $('#tab_btns a').click(function (e) {
             e.preventDefault();
