@@ -131,18 +131,18 @@
             <input type="text" class="form-control" name="versions_json_url" value="{{:settings.versions_json_url}}">
         </div>
 
-        <h3 class="fluent-heading">Ignore Lists (Comma-separated)</h3>
+        <h3 class="fluent-heading">Ignore Lists</h3>
         <div class="form-row">
-            <label>Ignore File Types</label>
+            <label>Ignore File Types (Comma-separated)</label>
             <input type="text" class="form-control" name="ignore_file_types" value="{{if settings.ignore_file_types}}{{:settings.ignore_file_types.join(',')}}{{/if}}" placeholder="e.g. .txt, .pdf">
         </div>
         <div class="form-row">
-            <label>Ignore Update Title IDs</label>
-            <input type="text" class="form-control" name="ignore_update_title_ids" value="{{if settings.ignore_update_title_ids}}{{:settings.ignore_update_title_ids.join(',')}}{{/if}}">
+            <label>Ignore Update Title IDs (One per line)</label>
+            <textarea class="form-control" name="ignore_update_title_ids" rows="4" placeholder="0100000000000000&#10;0100000000000800">{{if settings.ignore_update_title_ids}}{{:settings.ignore_update_title_ids.join('\n')}}{{/if}}</textarea>
         </div>
         <div class="form-row">
-            <label>Ignore DLC Title IDs</label>
-            <input type="text" class="form-control" name="ignore_dlc_title_ids" value="{{if settings.ignore_dlc_title_ids}}{{:settings.ignore_dlc_title_ids.join(',')}}{{/if}}">
+            <label>Ignore DLC Title IDs (One per line)</label>
+            <textarea class="form-control" name="ignore_dlc_title_ids" rows="4" placeholder="0100000000000001&#10;0100000000000002">{{if settings.ignore_dlc_title_ids}}{{:settings.ignore_dlc_title_ids.join('\n')}}{{/if}}</textarea>
         </div>
 
         <div style="margin-top: 32px; display:flex; justify-content: flex-end;">
@@ -189,7 +189,7 @@
                     {{if scanFolders && scanFolders.length}}(and {{:scanFolders.length}} additional folders){{/if}}
                   </div>
                   <div class="alert-actions">
-                    <button type="button" class="btn btn-primary library-organize-action">Organize Library</button>
+                    <button type="button" class="btn btn-success library-organize-action">Organize Library</button>
                     <button type="button" class="btn btn-outline-primary folder-set">Change</button>
                     <button type="button" class="btn btn-outline-primary folder-set">Add</button>
                     <button type="button" class="btn btn-link export-btn">Export CSV</button>
@@ -311,7 +311,7 @@
                    <div class="alert-icon">⚠️</div>
                    <div class="alert-content"><strong>{{:library.length}}</strong> files were skipped during scan, additional details below:</div>
                    <div class="alert-actions">
-                       <button type="button" class="btn btn-primary library-organize-action">Organize & Fix</button>
+                       <button type="button" class="btn btn-success library-organize-action">Organize & Fix</button>
                        <button type="button" class="btn btn-outline-primary export-btn">Export CSV</button>
                    </div>
                </div>

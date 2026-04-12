@@ -869,6 +869,26 @@ select.form-element-field {
     color: #fff !important;
 }
 
+.btn-success {
+    background-color: #107C10 !important; /* Fluent Green */
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+.btn-success:hover {
+    background-color: #0B5A0B !important;
+    color: #fff !important;
+}
+
+body.bootstrap-dark .btn-success {
+    background-color: #92C353 !important; /* Lighter fluent green */
+    color: #000 !important;
+}
+
+body.bootstrap-dark .btn-success:hover {
+    background-color: #A6D06D !important;
+}
+
 .btn-link {
     text-decoration: none !important;
     color: #0078D4 !important;

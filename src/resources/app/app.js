@@ -466,10 +466,12 @@ $(function () {
             state.settings.titles_json_url = formData.get("titles_json_url");
             state.settings.versions_json_url = formData.get("versions_json_url");
             
-            const splitIgnore = (val) => val ? val.split(',').map(s => s.trim()).filter(s => s) : [];
-            state.settings.ignore_file_types = splitIgnore(formData.get("ignore_file_types"));
-            state.settings.ignore_update_title_ids = splitIgnore(formData.get("ignore_update_title_ids"));
-            state.settings.ignore_dlc_title_ids = splitIgnore(formData.get("ignore_dlc_title_ids"));
+            const splitComma = (val) => val ? val.split(',').map(s => s.trim()).filter(s => s) : [];
+            const splitNewline = (val) => val ? val.split(/\r?\n/).map(s => s.trim()).filter(s => s) : [];
+            
+            state.settings.ignore_file_types = splitComma(formData.get("ignore_file_types"));
+            state.settings.ignore_update_title_ids = splitNewline(formData.get("ignore_update_title_ids"));
+            state.settings.ignore_dlc_title_ids = splitNewline(formData.get("ignore_dlc_title_ids"));
             
             const btn = $(this).find("button[type='submit']");
             const originalText = btn.text();
