@@ -2,13 +2,13 @@ package switchfs
 
 import (
 	"errors"
-	"github.com/avast/retry-go"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/avast/retry-go/v5"
 )
 
 type ReadAtCloser interface {
@@ -59,18 +59,26 @@ func NewSplitFileReader(filePath string) (*splitFile, error) {
 	result := splitFile{}
 	index := strings.LastIndex(filePath, string(os.PathSeparator))
 	splitFileFolder := filePath[:index]
-	files, err := ioutil.ReadDir(splitFileFolder)
+	files, err := os.ReadDir(splitFileFolder)
 	if err != nil {
 		return nil, err
 	}
 	result.path = splitFileFolder
-	result.chunkSize = files[0].Size()
 	result.info = make([]os.FileInfo, 0, len(files))
 	result.files = make([]ReadAtCloser, len(files))
 	for _, file := range files {
 		if _, err := strconv.Atoi(file.Name()[len(file.Name())-1:]); err == nil {
-			result.info = append(result.info, file)
+			info, err := file.Info()
+			if err == nil {
+				result.info = append(result.info, info)
+				if result.chunkSize == 0 {
+					result.chunkSize = info.Size()
+				}
+			}
 		}
+	}
+	if len(result.info) == 0 {
+		return nil, errors.New("no split files found")
 	}
 	return &result, nil
 }
