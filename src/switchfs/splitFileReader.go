@@ -106,8 +106,7 @@ func (sp *splitFile) ReadAt(p []byte, off int64) (n int, err error) {
 func _openFile(path string) (*os.File, error) {
 	var file *os.File
 	var err error
-	retry.Attempts(5)
-	err = retry.Do(
+	err = retry.New(retry.Attempts(5)).Do(
 		func() error {
 			file, err = os.Open(path)
 			return err
