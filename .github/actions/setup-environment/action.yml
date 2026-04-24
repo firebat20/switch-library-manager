@@ -11,12 +11,12 @@ runs:
     - name: Get bundler
       working-directory: ./src
       shell: bash
-      run: go get -u github.com/asticode/go-astilectron-bundler/
+      run: go get -u github.com/firebat20/go-astilectron-bundler/
 
     - name: Install bundler
       working-directory: ./src
       shell: bash
-      run: go install github.com/asticode/go-astilectron-bundler/astilectron-bundler
+      run: go install github.com/firebat20/go-astilectron-bundler/astilectron-bundler
 
     - name: Move bundler
       working-directory: ./src
