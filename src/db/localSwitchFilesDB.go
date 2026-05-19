@@ -166,6 +166,7 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 	titles map[string]*SwitchGameFiles,
 	skipped map[ExtendedFileInfo]SkippedFile) {
 
+	newMetadata := make(map[string]interface{})
 	settings := settings.ReadSettings("") // use empty path, as it will use existing settings instance
 	ignoreFileTypes := map[string]struct{}{}
 	for _, ext := range settings.IgnoreFileTypes {
@@ -221,7 +222,7 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 			continue
 		}
 
-		contentMap, err := ldb.getGameMetadata(file, filePath, skipped)
+		contentMap, err := ldb.getGameMetadata(file, filePath, skipped, newMetadata)
 
 		if err != nil {
 			if _, ok := skipped[file]; !ok {
@@ -356,17 +357,29 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 		}
 	}
 
+	if len(newMetadata) > 0 {
+		err := ldb.db.AddEntries(DB_TABLE_FILE_SCAN_METADATA, newMetadata)
+		if err != nil {
+			zap.S().Warnf("failed to batch save metadata: %v", err)
+		}
+	}
 }
 
 func (ldb *LocalSwitchDBManager) getGameMetadata(file ExtendedFileInfo,
 	filePath string,
-	skipped map[ExtendedFileInfo]SkippedFile) (map[string]*switchfs.ContentMetaAttributes, error) {
+	skipped map[ExtendedFileInfo]SkippedFile,
+	newMetadata map[string]interface{}) (map[string]*switchfs.ContentMetaAttributes, error) {
 
 	var metadata map[string]*switchfs.ContentMetaAttributes = nil
 	keys, _ := settings.SwitchKeys()
 	var err error
 	fileKey := filePath + "|" + file.FileName + "|" + strconv.Itoa(int(file.Size))
 	if keys != nil && keys.GetKey("header_key") != "" {
+		if val, exists := newMetadata[fileKey]; exists {
+			if m, ok := val.(map[string]*switchfs.ContentMetaAttributes); ok {
+				return m, nil
+			}
+		}
 		err = ldb.db.GetEntry(DB_TABLE_FILE_SCAN_METADATA, fileKey, &metadata)
 
 		if err != nil {
@@ -402,11 +415,7 @@ func (ldb *LocalSwitchDBManager) getGameMetadata(file ExtendedFileInfo,
 	}
 
 	if metadata != nil {
-		err = ldb.db.AddEntry(DB_TABLE_FILE_SCAN_METADATA, fileKey, metadata)
-
-		if err != nil {
-			zap.S().Warnf("%v", err)
-		}
+		newMetadata[fileKey] = metadata
 		return metadata, nil
 	}
 

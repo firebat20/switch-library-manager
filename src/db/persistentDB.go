@@ -30,10 +30,11 @@ func NewPersistentDB(baseFolder string) (*PersistentDB, error) {
 	}
 
 	//set DB version
-	err = db.View(func(tx *bolt.Tx) error {
+	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(DB_INTERNAL_TABLENAME))
 		if b == nil {
-			b, err := tx.CreateBucket([]byte(DB_INTERNAL_TABLENAME))
+			var err error
+			b, err = tx.CreateBucket([]byte(DB_INTERNAL_TABLENAME))
 			if b == nil || err != nil {
 				return fmt.Errorf("create bucket: %s", err)
 			}
@@ -45,6 +46,9 @@ func NewPersistentDB(baseFolder string) (*PersistentDB, error) {
 		}
 		return nil
 	})
+	if err != nil {
+		zap.S().Errorf("failed to initialize DB version: %v", err)
+	}
 
 	return &PersistentDB{db: db}, nil
 }
@@ -79,6 +83,36 @@ func (pd *PersistentDB) AddEntry(tableName string, key string, value interface{}
 		}
 		err = b.Put([]byte(key), bytesBuff.Bytes())
 		return err
+	})
+	return err
+}
+
+func (pd *PersistentDB) AddEntries(tableName string, entries map[string]interface{}) error {
+	if len(entries) == 0 {
+		return nil
+	}
+	err := pd.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			var err error
+			b, err = tx.CreateBucket([]byte(tableName))
+			if b == nil || err != nil {
+				return fmt.Errorf("create bucket: %s", err)
+			}
+		}
+		for key, value := range entries {
+			var bytesBuff bytes.Buffer
+			encoder := gob.NewEncoder(&bytesBuff)
+			err := encoder.Encode(value)
+			if err != nil {
+				return err
+			}
+			err = b.Put([]byte(key), bytesBuff.Bytes())
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	return err
 }

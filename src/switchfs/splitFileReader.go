@@ -87,7 +87,7 @@ func (sp *splitFile) ReadAt(p []byte, off int64) (n int, err error) {
 	//calculate the part containing the offset
 	part := int(off / sp.chunkSize)
 
-	if len(sp.info) < part {
+	if part < 0 || part >= len(sp.info) {
 		return 0, errors.New("missing part " + strconv.Itoa(part))
 	}
 

@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mcuadros/go-version"
+	"github.com/hashicorp/go-version"
 	"go.uber.org/zap"
 )
 
@@ -209,7 +209,16 @@ func CheckForUpdates() (bool, error) {
 
 	remoteVer := remoteValues["version"]
 
-	if version.CompareSimple(remoteVer, localVer) > 0 {
+	vRemote, err := version.NewVersion(remoteVer)
+	if err != nil {
+		return false, err
+	}
+	vLocal, err := version.NewVersion(localVer)
+	if err != nil {
+		return false, err
+	}
+
+	if vRemote.GreaterThan(vLocal) {
 		return true, nil
 	}
 

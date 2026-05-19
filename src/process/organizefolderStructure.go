@@ -5,6 +5,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -445,20 +446,33 @@ func createFolder(path string, logger *zap.SugaredLogger) error {
 }
 
 func deleteEmptyFolders(path string) error {
-	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	var dirs []string
+	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
 		if err != nil {
-			zap.S().Error("Error while deleting empty folders", err)
+			zap.S().Error("Error while scanning for empty folders", err)
+			return nil
 		}
-		if info != nil && info.IsDir() {
-			err = deleteEmptyFolder(path)
-			if err != nil {
-				zap.S().Error("Error while deleting empty folders", err)
-			}
+		if info != nil && info.IsDir() && p != path {
+			dirs = append(dirs, p)
 		}
-
 		return nil
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Sort directories by path length in descending order to process deepest first (bottom-up)
+	sort.Slice(dirs, func(i, j int) bool {
+		return len(dirs[i]) > len(dirs[j])
+	})
+
+	for _, dir := range dirs {
+		err = deleteEmptyFolder(dir)
+		if err != nil {
+			zap.S().Error("Error while deleting empty folder", err)
+		}
+	}
+	return nil
 }
 
 func deleteEmptyFolder(path string) error {
