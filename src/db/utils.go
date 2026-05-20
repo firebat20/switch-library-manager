@@ -1,7 +1,6 @@
 package db
 
 import (
-	bytes2 "bytes"
 	"encoding/json"
 	"errors"
 	"io"
@@ -19,25 +18,14 @@ type ProgressUpdater interface {
 
 func LoadAndUpdateFile(url string, filePath string, etag string) (*os.File, string, error) {
 
-	//create file if not exist
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		_, err = os.Create(filePath)
-		if err != nil {
-			zap.S().Errorf("Failed to create file %v - %v\n", filePath, err)
-			return nil, "", err
-		}
-	}
-
 	var file *os.File = nil
 
 	//try to check if there is a new version
 	//if so, save the file
 	bytes, newEtag, err := downloadBytesFromUrl(url, etag)
 	if err == nil {
-		//validate json structure
-		var test map[string]interface{}
-		err = decodeToJsonObject(bytes2.NewReader(bytes), &test)
-		if err == nil {
+		//validate json structure without reflection-based allocations
+		if json.Valid(bytes) {
 			file, err = saveFile(bytes, filePath)
 			etag = newEtag
 		} else {

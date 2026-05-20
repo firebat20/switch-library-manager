@@ -35,6 +35,13 @@ type SwitchTitlesDB struct {
 }
 
 func CreateSwitchTitleDB(titlesFile, versionsFile io.Reader) (*SwitchTitlesDB, error) {
+	if closer, ok := titlesFile.(io.Closer); ok {
+		defer closer.Close()
+	}
+	if closer, ok := versionsFile.(io.Closer); ok {
+		defer closer.Close()
+	}
+
 	//parse the titles objects
 	var titles = map[string]TitleAttributes{}
 	err := decodeToJsonObject(titlesFile, &titles)
@@ -52,6 +59,9 @@ func CreateSwitchTitleDB(titlesFile, versionsFile io.Reader) (*SwitchTitlesDB, e
 
 	result := SwitchTitlesDB{TitlesMap: map[string]*SwitchTitle{}}
 	for id, attr := range titles {
+		if len(id) < 16 {
+			continue
+		}
 		id = strings.ToLower(id)
 
 		//TitleAttributes id rules:
@@ -59,7 +69,6 @@ func CreateSwitchTitleDB(titlesFile, versionsFile io.Reader) (*SwitchTitlesDB, e
 		//Updates ends with 800
 		//Dlc adds 1 to 4th char starting from the right (always odd) and
 		//have a running counter (starting with 001) in the 3 last chars
-		switchTitle := &SwitchTitle{Dlc: map[string]TitleAttributes{}}
 		idPrefix := id[0 : len(id)-3]
 		if !(strings.HasSuffix(id, "000") || strings.HasSuffix(id, "800")) {
 			intVar, _ := strconv.ParseUint(id[len(id)-4:len(id)-3], 16, 64)
@@ -67,10 +76,11 @@ func CreateSwitchTitleDB(titlesFile, versionsFile io.Reader) (*SwitchTitlesDB, e
 			idPrefix = id[0:len(id)-4] + h
 		}
 
-		if t, ok := result.TitlesMap[idPrefix]; ok {
-			switchTitle = t
+		switchTitle, ok := result.TitlesMap[idPrefix]
+		if !ok {
+			switchTitle = &SwitchTitle{Dlc: map[string]TitleAttributes{}}
+			result.TitlesMap[idPrefix] = switchTitle
 		}
-		result.TitlesMap[idPrefix] = switchTitle
 
 		// parse the release date to a date string
 		prd := strconv.Itoa(attr.ReleaseDate)
