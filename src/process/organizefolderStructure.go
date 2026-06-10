@@ -148,10 +148,21 @@ func OrganizeByFolders(baseFolder string,
 				continue
 			}
 
+			baseName := v.File.ExtendedInfo.FileName
+			idx := len(baseName) - 1
+			for idx >= 0 && baseName[idx] >= '0' && baseName[idx] <= '9' {
+				idx--
+			}
+			prefix := baseName[:idx+1]
+
 			for _, file := range files {
-				if _, err := strconv.Atoi(file.Name()[len(file.Name())-1:]); err == nil {
-					from := filepath.Join(v.File.ExtendedInfo.BaseFolder, file.Name())
-					to := filepath.Join(destinationPath, file.Name())
+				if file.IsDir() {
+					continue
+				}
+				name := file.Name()
+				if isSplitPart(name, prefix) {
+					from := filepath.Join(v.File.ExtendedInfo.BaseFolder, name)
+					to := filepath.Join(destinationPath, name)
 					err := moveFile(from, to)
 					if err != nil {
 						logger.Errorf("Failed to move file [%v]\n", err)
@@ -489,4 +500,20 @@ func deleteEmptyFolder(path string) error {
 	_ = os.Remove(path)
 
 	return nil
+}
+
+func isSplitPart(fileName string, prefix string) bool {
+	if !strings.HasPrefix(fileName, prefix) {
+		return false
+	}
+	suffix := fileName[len(prefix):]
+	if len(suffix) == 0 {
+		return false
+	}
+	for i := 0; i < len(suffix); i++ {
+		if suffix[i] < '0' || suffix[i] > '9' {
+			return false
+		}
+	}
+	return true
 }

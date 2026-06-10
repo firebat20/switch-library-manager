@@ -81,7 +81,11 @@ func ReadSettingsAsJSON(baseFolder string) string {
 	if _, err := os.Stat(filepath.Join(baseFolder, SETTINGS_FILENAME)); err != nil {
 		saveDefaultSettings(baseFolder)
 	}
-	file, _ := os.Open(filepath.Join(baseFolder, SETTINGS_FILENAME))
+	file, err := os.Open(filepath.Join(baseFolder, SETTINGS_FILENAME))
+	if err != nil {
+		return ""
+	}
+	defer file.Close()
 	bytes, _ := io.ReadAll(file)
 	return string(bytes)
 }
@@ -97,11 +101,11 @@ func ReadSettings(baseFolder string) *AppSettings {
 		if err != nil {
 			zap.S().Warnf("Missing or corrupted config file, creating a new one")
 			return saveDefaultSettings(baseFolder)
-		} else {
-			_ = json.NewDecoder(file).Decode(&settingsInstance)
-			settingsInstance = verifySettings(baseFolder, settingsInstance)
-			return settingsInstance
 		}
+		defer file.Close()
+		_ = json.NewDecoder(file).Decode(&settingsInstance)
+		settingsInstance = verifySettings(baseFolder, settingsInstance)
+		return settingsInstance
 	} else {
 		return saveDefaultSettings(baseFolder)
 	}

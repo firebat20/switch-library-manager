@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -55,31 +55,94 @@ func (sp *fileWrapper) Close() error {
 	return nil
 }
 
+func isSplitPart(fileName string, prefix string) bool {
+	if !strings.HasPrefix(fileName, prefix) {
+		return false
+	}
+	suffix := fileName[len(prefix):]
+	if len(suffix) == 0 {
+		return false
+	}
+	for i := 0; i < len(suffix); i++ {
+		if suffix[i] < '0' || suffix[i] > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func NewSplitFileReader(filePath string) (*splitFile, error) {
 	result := splitFile{}
-	index := strings.LastIndex(filePath, string(os.PathSeparator))
-	splitFileFolder := filePath[:index]
-	files, err := os.ReadDir(splitFileFolder)
+	dir := filepath.Dir(filePath)
+	baseName := filepath.Base(filePath)
+
+	i := len(baseName) - 1
+	for i >= 0 && baseName[i] >= '0' && baseName[i] <= '9' {
+		i--
+	}
+	prefix := baseName[:i+1]
+
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-	result.path = splitFileFolder
-	result.info = make([]os.FileInfo, 0, len(files))
-	result.files = make([]ReadAtCloser, len(files))
+
+	type partInfo struct {
+		info os.FileInfo
+		num  int
+	}
+	var matchedParts []partInfo
+	maxPart := -1
+
 	for _, file := range files {
-		if _, err := strconv.Atoi(file.Name()[len(file.Name())-1:]); err == nil {
-			info, err := file.Info()
+		if file.IsDir() {
+			continue
+		}
+		name := file.Name()
+		if isSplitPart(name, prefix) {
+			suffix := name[len(prefix):]
+			partNum, err := strconv.Atoi(suffix)
 			if err == nil {
-				result.info = append(result.info, info)
-				if result.chunkSize == 0 {
-					result.chunkSize = info.Size()
+				info, err := file.Info()
+				if err == nil {
+					matchedParts = append(matchedParts, partInfo{info: info, num: partNum})
+					if partNum > maxPart {
+						maxPart = partNum
+					}
 				}
 			}
 		}
 	}
-	if len(result.info) == 0 {
+
+	if len(matchedParts) == 0 {
 		return nil, errors.New("no split files found")
 	}
+
+	result.path = dir
+	result.info = make([]os.FileInfo, maxPart+1)
+	result.files = make([]ReadAtCloser, maxPart+1)
+
+	for _, p := range matchedParts {
+		result.info[p.num] = p.info
+	}
+
+	// Determine chunk size from part 0
+	if result.info[0] != nil {
+		result.chunkSize = result.info[0].Size()
+	} else {
+		// fallback to the size of the first available part
+		for _, info := range result.info {
+			if info != nil {
+				result.chunkSize = info.Size()
+				break
+			}
+		}
+	}
+
+	if result.chunkSize == 0 {
+		return nil, errors.New("chunk size is 0 or no parts found")
+	}
+
 	return &result, nil
 }
 
@@ -87,12 +150,15 @@ func (sp *splitFile) ReadAt(p []byte, off int64) (n int, err error) {
 	//calculate the part containing the offset
 	part := int(off / sp.chunkSize)
 
-	if part < 0 || part >= len(sp.info) {
+	if part < 0 || part >= len(sp.info) || sp.info[part] == nil {
 		return 0, errors.New("missing part " + strconv.Itoa(part))
 	}
 
 	if len(sp.files) == 0 || sp.files[part] == nil {
-		file, _ := _openFile(path.Join(sp.path, sp.info[part].Name()))
+		file, err := _openFile(filepath.Join(sp.path, sp.info[part].Name()))
+		if err != nil {
+			return 0, err
+		}
 		sp.files[part] = file
 	}
 	off = off - sp.chunkSize*int64(part)
@@ -125,6 +191,9 @@ func (sp *splitFile) Close() error {
 }
 
 func OpenFile(filePath string) (ReadAtCloser, error) {
+	if len(filePath) == 0 {
+		return nil, errors.New("empty file path")
+	}
 	//check if it's a split file
 	if _, err := strconv.Atoi(filePath[len(filePath)-1:]); err == nil {
 		return NewSplitFileReader(filePath)

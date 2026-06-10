@@ -45,6 +45,7 @@ func LoadAndUpdateFile(url string, filePath string, etag string) (*os.File, stri
 
 		fileInfo, err := os.Stat(filePath)
 		if err != nil || fileInfo.Size() == 0 {
+			file.Close()
 			zap.S().Infof("Local file is empty, or corrupted")
 			return nil, "", errors.New("unable to download switch titles db")
 		}
@@ -77,10 +78,11 @@ func downloadBytesFromUrl(url string, etag string) ([]byte, string, error) {
 		return nil, "", err
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode >= 400 {
 		return nil, "", errors.New("got a non 200 response - " + resp.Status)
 	}
-	defer resp.Body.Close()
 	//getting the new etag
 	etag = resp.Header.Get("Etag")
 
