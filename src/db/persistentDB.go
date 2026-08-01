@@ -7,7 +7,7 @@ import (
 	"log"
 	"path/filepath"
 
-	"github.com/trembon/switch-library-manager/settings"
+	"github.com/firebat20/switch-library-manager/settings"
 	bolt "go.etcd.io/bbolt"
 	"go.uber.org/zap"
 )

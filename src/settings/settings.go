@@ -23,7 +23,7 @@ const (
 	SLM_VERSION               = "1.12.0"
 	DEFAULT_TITLES_JSON_URL   = "https://tinfoil.io/repo/db/titles.json"
 	DEFAULT_VERSIONS_JSON_URL = "https://raw.githubusercontent.com/blawar/titledb/master/versions.json"
-	SLM_VERSION_URL           = "https://raw.githubusercontent.com/trembon/switch-library-manager/master/version.json"
+	SLM_VERSION_URL           = "https://raw.githubusercontent.com/firebat20/switch-library-manager/master/version.json"
 )
 
 const (

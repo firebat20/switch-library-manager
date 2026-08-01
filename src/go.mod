@@ -1,4 +1,4 @@
-module github.com/trembon/switch-library-manager
+module github.com/firebat20/switch-library-manager
 
 go 1.26
 

@@ -14,9 +14,9 @@ import (
 	"github.com/asticode/go-astikit"
 	"github.com/firebat20/go-astilectron"
 	bootstrap "github.com/firebat20/go-astilectron-bootstrap"
-	"github.com/trembon/switch-library-manager/db"
-	"github.com/trembon/switch-library-manager/process"
-	"github.com/trembon/switch-library-manager/settings"
+	"github.com/firebat20/switch-library-manager/db"
+	"github.com/firebat20/switch-library-manager/process"
+	"github.com/firebat20/switch-library-manager/settings"
 	"go.uber.org/zap"
 )
 

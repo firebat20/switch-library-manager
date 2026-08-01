@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/trembon/switch-library-manager/db"
-	"github.com/trembon/switch-library-manager/switchfs"
+	"github.com/firebat20/switch-library-manager/db"
+	"github.com/firebat20/switch-library-manager/switchfs"
 	"go.uber.org/zap"
 )
 
