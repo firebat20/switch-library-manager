@@ -69,11 +69,10 @@ func main() {
 }
 
 func createLogger(workingFolder string, debug bool) *zap.Logger {
-	var config zap.Config
+	config := zap.NewDevelopmentConfig()
 	if debug {
-		config = zap.NewDevelopmentConfig()
+		config.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
 	} else {
-		config = zap.NewDevelopmentConfig()
 		config.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
 	}
 	logPath := filepath.Join(workingFolder, "slm.log")

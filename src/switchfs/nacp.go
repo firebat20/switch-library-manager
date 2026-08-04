@@ -97,6 +97,11 @@ func ExtractNacp(cnmt *ContentMetaAttributes, file io.ReaderAt, securePartition 
 /*https://switchbrew.org/wiki/NACP_Format*/
 func readNacp(data []byte, romFsHeader RomfsHeader, fileEntry RomfsFileEntry) (Nacp, error) {
 	offset := romFsHeader.DataOffset + fileEntry.offset
+	// The NACP fields we read span up to offset+0x3070; ensure the buffer covers
+	// that range before indexing, otherwise a malformed control.nacp panics.
+	if offset+0x3070 > uint64(len(data)) {
+		return Nacp{}, errors.New("failed to read nacp: data region out of range")
+	}
 	titles := map[string]NacpTitle{}
 	for i := 0; i < 16; i++ {
 		//lang := i

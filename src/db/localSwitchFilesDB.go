@@ -205,11 +205,14 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 		fileName := strings.ToLower(file.FileName)
 		isSplit := false
 
-		if partNum, err := strconv.Atoi(fileName[len(fileName)-2:]); err == nil {
-			if partNum == 0 {
-				isSplit = true
-			} else {
-				continue
+		// Guard: names shorter than 2 chars would panic on the slice below.
+		if len(fileName) >= 2 {
+			if partNum, err := strconv.Atoi(fileName[len(fileName)-2:]); err == nil {
+				if partNum == 0 {
+					isSplit = true
+				} else {
+					continue
+				}
 			}
 		}
 
@@ -368,7 +371,19 @@ func (ldb *LocalSwitchDBManager) processLocalFiles(files []ExtendedFileInfo,
 func (ldb *LocalSwitchDBManager) getGameMetadata(file ExtendedFileInfo,
 	filePath string,
 	skipped map[ExtendedFileInfo]SkippedFile,
-	newMetadata map[string]interface{}) (map[string]*switchfs.ContentMetaAttributes, error) {
+	newMetadata map[string]interface{}) (result map[string]*switchfs.ContentMetaAttributes, resultErr error) {
+
+	// Defense in depth: the switchfs parsers read many offsets/sizes straight
+	// from (potentially malformed or crafted) files. A bounds panic in any of
+	// them must not take down the whole scan - convert it into a skip instead.
+	defer func() {
+		if r := recover(); r != nil {
+			zap.S().Errorf("[file:%v] recovered from panic while reading metadata: %v", file.FileName, r)
+			skipped[file] = SkippedFile{ReasonCode: REASON_MALFORMED_FILE, ReasonText: fmt.Sprintf("Failed to read file [Reason: %v]", r)}
+			result = nil
+			resultErr = fmt.Errorf("recovered from panic: %v", r)
+		}
+	}()
 
 	var metadata map[string]*switchfs.ContentMetaAttributes = nil
 	keys, _ := settings.SwitchKeys()

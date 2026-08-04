@@ -66,13 +66,19 @@ func readPfs0(reader io.ReaderAt, offset int64) (*PFS0, error) {
 	p := &PFS0{}
 
 	fileCount := binary.LittleEndian.Uint16(header[0x4:0x8])
-
-	fileEntryTableOffset := 0x10 + (fileEntryTableSize * fileCount)
-
 	stringsLen := binary.LittleEndian.Uint16(header[0x8:0xC])
-	p.HeaderLen = fileEntryTableOffset + stringsLen
+
+	// Compute the entry-table offset in a wide int so a large fileCount cannot
+	// silently overflow (the original uint16 math could wrap and produce a tiny
+	// offset, leading to out-of-range reads/panics later).
+	fileEntryTableOffset := int64(0x10) + int64(fileEntryTableSize)*int64(fileCount)
+
+	if fileEntryTableOffset+int64(stringsLen) > 0x7fffffff {
+		return nil, errors.New("invalid PFS0/HFS0 header: implausible size")
+	}
+	p.HeaderLen = uint16(fileEntryTableOffset) + stringsLen
 	fileNamesBuffer := make([]byte, stringsLen)
-	_, err = reader.ReadAt(fileNamesBuffer, offset+int64(fileEntryTableOffset))
+	_, err = reader.ReadAt(fileNamesBuffer, offset+fileEntryTableOffset)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +87,22 @@ func readPfs0(reader io.ReaderAt, offset int64) (*PFS0, error) {
 	// go over the fileEntries
 	for i := uint16(0); i < fileCount; i++ {
 		fileEntryTable := make([]byte, fileEntryTableSize)
-		_, err = reader.ReadAt(fileEntryTable, offset+int64(0x10+(fileEntryTableSize*i)))
+		_, err = reader.ReadAt(fileEntryTable, offset+int64(0x10)+int64(fileEntryTableSize)*int64(i))
 		if err != nil {
 			return nil, err
 		}
 
 		fileOffset := binary.LittleEndian.Uint64(fileEntryTable[0:8])
 		fileSize := binary.LittleEndian.Uint64(fileEntryTable[8:16])
+
+		// The name offset is read straight from the file; bound it against the
+		// actual string table before slicing to avoid an out-of-range panic.
+		nameOffset := binary.LittleEndian.Uint32(fileEntryTable[16:20])
+		if nameOffset > uint32(len(fileNamesBuffer)) {
+			return nil, errors.New("invalid PFS0/HFS0 file entry: name offset out of range")
+		}
 		var nameBytes []byte
-		for _, b := range fileNamesBuffer[binary.LittleEndian.Uint16(fileEntryTable[16:20]):] {
+		for _, b := range fileNamesBuffer[nameOffset:] {
 			if b == 0x0 {
 				break
 			} else {

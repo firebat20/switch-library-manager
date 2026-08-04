@@ -2,6 +2,7 @@ package settings
 
 import (
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -57,10 +58,13 @@ func InitSwitchKeys(baseFolder string) (*switchKeys, error) {
 
 	// third, if not found in current, look in home directory
 	if err != nil {
-		path = "${HOME}/.switch/prod.keys"
-
-		logger.Infof("Trying to load prod.keys based on home directory: %v", path)
-		p, err = properties.LoadFile(path, properties.UTF8)
+		if home, herr := os.UserHomeDir(); herr == nil {
+			path = filepath.Join(home, ".switch", "prod.keys")
+			logger.Infof("Trying to load prod.keys based on home directory: %v", path)
+			p, err = properties.LoadFile(path, properties.UTF8)
+		} else {
+			logger.Infof("Unable to resolve home directory: %v", herr)
+		}
 	}
 
 	if err != nil {

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"log"
 	"path/filepath"
+	"time"
 
 	"github.com/firebat20/switch-library-manager/settings"
 	bolt "go.etcd.io/bbolt"
@@ -23,9 +23,12 @@ type PersistentDB struct {
 func NewPersistentDB(baseFolder string) (*PersistentDB, error) {
 	// Open the my.db data file in your current directory.
 	// It will be created if it doesn't exist.
-	db, err := bolt.Open(filepath.Join(baseFolder, "slm.db"), 0600, &bolt.Options{Timeout: 1 * 60})
+	db, err := bolt.Open(filepath.Join(baseFolder, "slm.db"), 0600, &bolt.Options{Timeout: 60 * time.Second})
 	if err != nil {
-		log.Fatal(err)
+		// Do not log.Fatal here: this is a library constructor and killing the
+		// whole process (e.g. because slm.db is locked by another instance)
+		// prevents callers from handling the error gracefully.
+		zap.S().Errorf("failed to open slm.db: %v", err)
 		return nil, err
 	}
 

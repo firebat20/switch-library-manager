@@ -1,6 +1,7 @@
 package process
 
 import (
+	"errors"
 	"os"
 	"path"
 	"path/filepath"
@@ -269,15 +270,13 @@ func OrganizeByFolders(baseFolder string,
 					}
 				}
 
-				// check if dlc will generate a duplicate name as a previous dlc, but not have the same id
-				// this is to prevent deletion of dlc with the same name
-				value, exists := existingDlcs[to]
-				if !exists && value != id {
-					break
-				}
-
-				// if it exists and has same id, break and the remove duplicate file should handle this one
-				if exists && value == id {
+				// Check if this dlc will generate the same destination name as a
+				// previously-placed dlc. If the name is free, or it already maps to
+				// THIS dlc's id, we can use it. Otherwise it's a different dlc that
+				// happens to render to the same name - bump the numeric suffix and
+				// try again so we don't clobber the other file.
+				existingID, exists := existingDlcs[to]
+				if !exists || existingID == id {
 					break
 				}
 
@@ -399,8 +398,19 @@ func moveFile(from string, to string) error {
 	if from == to {
 		return nil
 	}
-	err := os.Rename(from, to)
-	return err
+
+	// os.Rename silently overwrites an existing destination on most platforms.
+	// Before moving, make sure we are not about to clobber a *different* file.
+	// os.SameFile handles case-insensitive filesystems and hardlinks, so a
+	// rename that only changes casing of the same underlying file still works.
+	if toInfo, err := os.Stat(to); err == nil {
+		if fromInfo, ferr := os.Stat(from); ferr == nil && !os.SameFile(fromInfo, toInfo) {
+			zap.S().Warnf("Refusing to overwrite existing file: %v", to)
+			return errors.New("destination already exists: " + to)
+		}
+	}
+
+	return os.Rename(from, to)
 }
 
 func applyTemplate(templateData map[string]string, useSafeNames bool, template string, nameTry int) string {
@@ -442,7 +452,16 @@ func applyTemplate(templateData map[string]string, useSafeNames bool, template s
 	result = space.ReplaceAllString(result, " ")
 
 	result = strings.TrimSpace(result)
-	return folderIllegalCharsRegex.ReplaceAllString(result, "")
+	result = folderIllegalCharsRegex.ReplaceAllString(result, "")
+
+	// The illegal-chars regex above does not strip '.', so a crafted title name
+	// (from titles.json or NACP metadata) could still be "." or ".." and escape
+	// the library root once joined. Neutralize any pure dot-segments.
+	if result == "." || result == ".." {
+		return ""
+	}
+
+	return result
 }
 
 func createFolder(path string, logger *zap.SugaredLogger) error {
