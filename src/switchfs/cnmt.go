@@ -63,10 +63,10 @@ func readBinaryCnmt(pfs0 *PFS0, data []byte) (*ContentMetaAttributes, error) {
 		return nil, errors.New("unexpected pfs0")
 	}
 	cnmtFile := pfs0.Files[0]
-	if int64(cnmtFile.StartOffset) > int64(len(data)) {
+	if cnmtFile.StartOffset > uint64(len(data)) {
 		return nil, errors.New("invalid cnmt: start offset out of range")
 	}
-	cnmt := data[int64(cnmtFile.StartOffset):]
+	cnmt := data[int(cnmtFile.StartOffset):]
 	// The cnmt header is 0x20 bytes; require at least that before reading fixed fields.
 	if len(cnmt) < 0x20 {
 		return nil, errors.New("invalid cnmt: truncated header")

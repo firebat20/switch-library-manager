@@ -112,7 +112,6 @@ func readPfs0(reader io.ReaderAt, offset int64) (*PFS0, error) {
 
 		p.Files[i] = fileEntry{fileOffset + uint64(p.HeaderLen), fileSize, string(nameBytes)}
 	}
-	p.HeaderLen += stringsLen
 
 	return p, nil
 }

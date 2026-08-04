@@ -48,14 +48,14 @@ func readRomfsHeader(data []byte) (RomfsHeader, error) {
 }
 
 func readRomfsFileEntry(data []byte, header RomfsHeader) (map[string]RomfsFileEntry, error) {
-	if header.FileMetaTableOffset+header.FileMetaTableSize > uint64(len(data)) {
+	if header.FileMetaTableOffset > uint64(len(data)) || header.FileMetaTableOffset+header.FileMetaTableSize > uint64(len(data)) {
 		return nil, errors.New("failed to read romfs")
 	}
 	dirBytes := data[header.FileMetaTableOffset : header.FileMetaTableOffset+header.FileMetaTableSize]
 	result := map[string]RomfsFileEntry{}
 	dirLen := uint64(len(dirBytes))
 	offset := uint64(0x0)
-	for offset < header.FileHashTableSize {
+	for offset < dirLen {
 		// Need at least the 0x20-byte fixed entry header before reading fields.
 		if offset+0x20 > dirLen {
 			break

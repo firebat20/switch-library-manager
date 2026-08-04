@@ -84,7 +84,7 @@ func createLogger(workingFolder string, debug bool) *zap.Logger {
 			// Remove leading slash left by url.Parse()
 			return os.OpenFile(u.Path[1:], os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 		})
-		logPath = "winfile:///" + logPath
+		logPath = "winfile:///" + filepath.ToSlash(logPath)
 	}
 
 	config.OutputPaths = []string{logPath}

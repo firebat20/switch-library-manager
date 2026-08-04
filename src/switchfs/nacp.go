@@ -99,7 +99,7 @@ func readNacp(data []byte, romFsHeader RomfsHeader, fileEntry RomfsFileEntry) (N
 	offset := romFsHeader.DataOffset + fileEntry.offset
 	// The NACP fields we read span up to offset+0x3070; ensure the buffer covers
 	// that range before indexing, otherwise a malformed control.nacp panics.
-	if offset+0x3070 > uint64(len(data)) {
+	if offset > uint64(len(data)) || offset+0x3070 > uint64(len(data)) {
 		return Nacp{}, errors.New("failed to read nacp: data region out of range")
 	}
 	titles := map[string]NacpTitle{}
