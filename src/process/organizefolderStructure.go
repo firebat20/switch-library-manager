@@ -22,6 +22,11 @@ var (
 	cjk                     = regexp.MustCompile("[\u2f70-\u2FA1\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f\\p{Katakana}\\p{Hiragana}\\p{Hangul}]")
 )
 
+// DeleteOldUpdates removes duplicate/obsolete update files identified during
+// the scan. baseFolder must be the *library* folder being organized (the same
+// folder passed to OrganizeByFolders): the subsequent empty-folder pruning
+// walks it, and pointing it at the application's install directory would prune
+// directories next to the executable instead.
 func DeleteOldUpdates(baseFolder string, localDB *db.LocalSwitchFilesDB, updateProgress db.ProgressUpdater) {
 	i := 0
 	for k, v := range localDB.Skipped {
@@ -206,7 +211,9 @@ func OrganizeByFolders(baseFolder string,
 			}
 			templateData[settings.TEMPLATE_VERSION] = strconv.Itoa(update)
 			templateData[settings.TEMPLATE_TYPE] = "UPD"
-			if updateInfo.Metadata.Ncap != nil {
+			// Metadata itself can be nil here; only the TitleId assignment above
+			// was guarded. Check Metadata before reaching into Ncap.
+			if updateInfo.Metadata != nil && updateInfo.Metadata.Ncap != nil {
 				templateData[settings.TEMPLATE_VERSION_TXT] = updateInfo.Metadata.Ncap.DisplayVersion
 			} else {
 				templateData[settings.TEMPLATE_VERSION_TXT] = ""
@@ -466,7 +473,10 @@ func applyTemplate(templateData map[string]string, useSafeNames bool, template s
 
 func createFolder(path string, logger *zap.SugaredLogger) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err = os.Mkdir(path, os.ModePerm)
+		// 0755 rather than os.ModePerm (0777): the created library folders
+		// should not be world-writable. MkdirAll also creates any missing
+		// parent directories, unlike Mkdir.
+		err = os.MkdirAll(path, 0755)
 		if err != nil {
 			logger.Errorf("Failed to create folder %v - %v\n", path, err)
 			return err

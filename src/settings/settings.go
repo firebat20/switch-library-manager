@@ -2,11 +2,13 @@ package settings
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/hashicorp/go-version"
 	"go.uber.org/zap"
@@ -184,8 +186,16 @@ func saveDefaultSettings(baseFolder string) *AppSettings {
 }
 
 func SaveSettings(settings *AppSettings, baseFolder string) *AppSettings {
-	file, _ := json.MarshalIndent(settings, "", " ")
-	_ = os.WriteFile(filepath.Join(baseFolder, SETTINGS_FILENAME), file, 0644)
+	file, err := json.MarshalIndent(settings, "", " ")
+	if err != nil {
+		zap.S().Errorf("failed to marshal settings: %v", err)
+		return settings
+	}
+	if err := os.WriteFile(filepath.Join(baseFolder, SETTINGS_FILENAME), file, 0600); err != nil {
+		// A failed save previously went completely unnoticed. Log it so a
+		// read-only or full disk doesn't silently drop the user's settings.
+		zap.S().Errorf("failed to write settings file: %v", err)
+	}
 	settingsInstance = settings
 	return settings
 }
@@ -194,13 +204,23 @@ func CheckForUpdates() (bool, error) {
 
 	localVer := SLM_VERSION
 
-	res, err := http.Get(SLM_VERSION_URL)
+	// Bare http.Get uses no timeout at all, so a hung server would block the
+	// update check (and, in console mode, startup) indefinitely. Use an
+	// explicit client with a total-request timeout instead.
+	client := http.Client{Timeout: 30 * time.Second}
+	res, err := client.Get(SLM_VERSION_URL)
 	if err != nil {
 		return false, err
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
+	if res.StatusCode >= 400 {
+		return false, errors.New("got a non 200 response - " + res.Status)
+	}
+
+	// The version file is tiny; cap the read so a hostile endpoint can't force
+	// us to buffer an unbounded response into memory.
+	body, err := io.ReadAll(io.LimitReader(res.Body, 1*1024*1024))
 	if err != nil {
 		return false, err
 	}

@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -122,7 +124,10 @@ func (g *GUI) Start() {
 				Center:          astikit.BoolPtr(true),
 				Height:          astikit.IntPtr(settingsObj.WindowHeight),
 				Width:           astikit.IntPtr(settingsObj.WindowWidth),
-				WebPreferences:  &astilectron.WebPreferences{EnableRemoteModule: astikit.BoolPtr(true)},
+				// SECURITY NOTE: EnableRemoteModule is set to false. All renderer
+				// interactions (dialogs, file explorer actions, window state)
+				// are handled via Astilectron IPC messages to Go.
+				WebPreferences: &astilectron.WebPreferences{EnableRemoteModule: astikit.BoolPtr(false)},
 			},
 		}},
 	}); err != nil {
@@ -190,8 +195,13 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 				}
 
 				if v.Updates != nil && len(v.Updates) != 0 {
-					if v.Updates[v.LatestUpdate].Metadata.Ncap != nil {
-						version = v.Updates[v.LatestUpdate].Metadata.Ncap.DisplayVersion
+					// v.LatestUpdate may not be a key in the map; indexing a
+					// missing key yields a zero-value SwitchFileInfo whose
+					// Metadata is nil, so dereferencing .Metadata.Ncap panics.
+					// Look the entry up explicitly and nil-check every hop.
+					if latest, ok := v.Updates[v.LatestUpdate]; ok &&
+						latest.Metadata != nil && latest.Metadata.Ncap != nil {
+						version = latest.Metadata.Ncap.DisplayVersion
 					} else {
 						version = ""
 					}
@@ -259,6 +269,12 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 		g.state.window.SendMessage(Message{Name: "rescan", Payload: ""}, func(m *astilectron.EventMessage) {})
 	case "missingUpdates":
 		retValue = g.getMissingUpdates()
+	case "showItemInFolder":
+		openItemInFolder(msg.Payload)
+	case "maximizeWindow":
+		if g.state.window != nil {
+			_ = g.state.window.Maximize()
+		}
 	case "missingDlc":
 		retValue = g.getMissingDLC()
 	case "checkUpdate":
@@ -275,6 +291,22 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 	g.sugarLogger.Debugf("Server response [%v]", retValue)
 
 	return retValue
+}
+
+func openItemInFolder(targetPath string) {
+	if targetPath == "" {
+		return
+	}
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("explorer", "/select,", filepath.Clean(targetPath))
+	case "darwin":
+		cmd = exec.Command("open", "-R", targetPath)
+	default:
+		cmd = exec.Command("xdg-open", filepath.Dir(targetPath))
+	}
+	_ = cmd.Run()
 }
 
 func getType(gameFile *db.SwitchGameFiles) string {
@@ -388,7 +420,9 @@ func (g *GUI) organizeLibrary() {
 		return
 	}
 	if settings.ReadSettings(g.baseFolder).OrganizeOptions.DeleteOldUpdateFiles {
-		process.DeleteOldUpdates(g.baseFolder, g.state.localDB, g)
+		// Clean within the library folder being organized, not the app's
+		// install directory (g.baseFolder).
+		process.DeleteOldUpdates(folderToScan, g.state.localDB, g)
 	}
 	process.OrganizeByFolders(folderToScan, g.state.localDB, g.state.switchDB, g)
 }

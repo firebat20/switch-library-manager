@@ -12,6 +12,18 @@ import (
 	"go.uber.org/zap"
 )
 
+// maxDownloadBytes caps how much data we will read from a remote URL. The
+// titles/versions JSON files are a few MB at most; anything wildly larger is
+// almost certainly a misconfigured or hostile endpoint. Because the download
+// URLs are user-editable in settings.json we treat the response as untrusted
+// and refuse to buffer an unbounded amount of it into memory.
+const maxDownloadBytes = 256 * 1024 * 1024 // 256 MB
+
+// httpTimeout bounds the *entire* request (connect + headers + body). The
+// previous implementation only set a dial timeout, so a server that accepted
+// the connection but then stalled the body would hang the app indefinitely.
+const httpTimeout = 60 * time.Second
+
 type ProgressUpdater interface {
 	UpdateProgress(curr int, total int, message string)
 }
@@ -69,9 +81,14 @@ func downloadBytesFromUrl(url string, etag string) ([]byte, string, error) {
 		DialContext: (&net.Dialer{
 			Timeout: 3 * time.Second,
 		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
 	}
 	client := http.Client{
 		Transport: transport,
+		// Bound the whole request, not just the dial. Otherwise a server that
+		// connects and then stalls the response body hangs the app forever.
+		Timeout: httpTimeout,
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -87,9 +104,15 @@ func downloadBytesFromUrl(url string, etag string) ([]byte, string, error) {
 	etag = resp.Header.Get("Etag")
 
 	if resp.StatusCode == http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
+		// Bound the amount we read into memory. io.LimitReader with (max+1)
+		// lets us detect an over-limit body instead of silently truncating it.
+		limited := io.LimitReader(resp.Body, maxDownloadBytes+1)
+		body, err := io.ReadAll(limited)
 		if err != nil {
 			return nil, "", err
+		}
+		if int64(len(body)) > maxDownloadBytes {
+			return nil, "", errors.New("remote file exceeds maximum allowed size")
 		}
 		return body, etag, nil
 	}

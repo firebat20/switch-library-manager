@@ -41,7 +41,7 @@ func (c *Console) Start() {
 		csvOutput = c.consoleFlags.ExportCsv.String()
 
 		if _, err := os.Stat(csvOutput); os.IsNotExist(err) {
-			err = os.Mkdir(csvOutput, os.ModePerm)
+			err = os.MkdirAll(csvOutput, 0755)
 			if err != nil {
 				fmt.Printf("Failed to create folder for csv export %v - %v\n", csvOutput, err)
 				zap.S().Errorf("Failed to create folder for csv export %v - %v\n", csvOutput, err)
@@ -135,7 +135,9 @@ func (c *Console) Start() {
 	if settingsObj.OrganizeOptions.DeleteOldUpdateFiles {
 		progressBar = progressbar.New(2000)
 		fmt.Printf("\nDeleting old updates\n")
-		process.DeleteOldUpdates(c.baseFolder, localDB, c)
+		// Clean within the library folder being organized, not the app's
+		// install directory (c.baseFolder).
+		process.DeleteOldUpdates(folderToScan, localDB, c)
 		progressBar.Finish()
 	}
 
