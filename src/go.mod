@@ -5,7 +5,7 @@ go 1.26
 require (
 	github.com/asticode/go-astikit v0.59.0
 	github.com/avast/retry-go/v5 v5.0.0
-	github.com/firebat20/go-astilectron v0.0.0-20260424023421-2261bc12f84b
+	github.com/firebat20/go-astilectron v0.0.0-20260804230919-117eae9631b7
 	github.com/firebat20/go-astilectron-bootstrap v0.0.0-20260424031731-a5b66249402f
 	github.com/hashicorp/go-version v1.9.0
 	github.com/jedib0t/go-pretty/v6 v6.8.3

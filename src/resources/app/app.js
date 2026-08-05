@@ -603,10 +603,7 @@ $(function () {
             sendMessage("saveSettings", JSON.stringify(state.settings), function() {
                 if (state.settings.organize_options.create_folder_per_game === false &&
                     state.settings.organize_options.rename_files === false){
-                    dialog.showMessageBox(null, {
-                        type: 'info',
-                        buttons: ['Ok'],
-                        defaultId: 0,
+                    showMessageBox({
                         title: 'Library organization is turned off',
                         message: 'Both rename files and create folders are disabled.',
                         detail: "You must enable at least one of these options to organize."
@@ -623,7 +620,7 @@ $(function () {
                     detail: 'This action will modify your local library files based on the settings you just chose.',
                 };
 
-                dialog.showMessageBox(null, options).then( (r) => {
+                showMessageBox(options).then( (r) => {
                     if (r.response === 0) {
                         $('.tabgroup > div').hide();
                         $(".progress-container").show();
@@ -636,10 +633,7 @@ $(function () {
                             state.dlc = undefined;
                             loadTab("#library");
                             scanLocalFolder(true);
-                            dialog.showMessageBox(null, {
-                                type: 'info',
-                                buttons: ['Ok'],
-                                defaultId: 0,
+                            showMessageBox({
                                 title: 'Success',
                                 message: 'Operation completed successfully'
                             });
@@ -654,10 +648,7 @@ $(function () {
             e.preventDefault();
             if (state.settings.organize_options.create_folder_per_game === false &&
                 state.settings.organize_options.rename_files === false){
-                dialog.showMessageBox(null, {
-                    type: 'info',
-                    buttons: ['Ok'],
-                    defaultId: 0,
+                showMessageBox({
                     title: 'Library organization is turned off',
                     message: 'Both rename files and create folders are disabled.',
                     detail: "You must enable at least one of these options in the Organize tab to proceed."
@@ -674,7 +665,7 @@ $(function () {
                 detail: 'This action will modify your local library files based on your current settings.',
             };
 
-            dialog.showMessageBox(null, options).then( (r) => {
+            showMessageBox(options).then( (r) => {
                 if (r.response === 0) {
                     $('.tabgroup > div').hide();
                     $(".progress-container").show();
@@ -687,10 +678,7 @@ $(function () {
                         state.dlc = undefined;
                         loadTab("#library");
                         scanLocalFolder(true);
-                        dialog.showMessageBox(null, {
-                            type: 'info',
-                            buttons: ['Ok'],
-                            defaultId: 0,
+                        showMessageBox({
                             title: 'Success',
                             message: 'Operation completed successfully'
                         });
@@ -707,13 +695,13 @@ $(function () {
             if(state.settings.dark_mode) {
                 document.body.classList.add("bootstrap-dark");
                 document.body.classList.remove("bootstrap");
-                try { require('electron').remote.nativeTheme.themeSource = 'dark'; } catch(e){}
+                // nativeTheme handled via CSS class toggle above
                 $('meta[name="color-scheme"]').attr("content", "dark");
                 $("#toggle-dark-mode").text("☀️");
             } else {
                 document.body.classList.add("bootstrap");
                 document.body.classList.remove("bootstrap-dark");
-                try { require('electron').remote.nativeTheme.themeSource = 'light'; } catch(e){}
+                // nativeTheme handled via CSS class toggle above
                 $('meta[name="color-scheme"]').attr("content", "light");
                 $("#toggle-dark-mode").text("🌙");
             }
@@ -742,7 +730,7 @@ $(function () {
                 message: 'Are you sure you want to perform a Hard Rescan?',
                 detail: 'This will completely clear the local database cache and do a deep scan of all your files again. It will take longer than a normal rescan.',
             };
-            dialog.showMessageBox(null, options).then( (r) => {
+            showMessageBox(options).then( (r) => {
                 if (r.response === 0) {
                     sendMessage("hardRescan", "", function(){});
                 }
@@ -777,17 +765,10 @@ $(function () {
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(() => {
-                try {
-                    const win = require('electron').remote.getCurrentWindow();
-                    const bounds = win.getBounds();
-                    const isMax = win.isMaximized();
-                    state.settings.window_maximized = isMax;
-                    if (!isMax) {
-                        state.settings.window_width = bounds.width;
-                        state.settings.window_height = bounds.height;
-                    }
-                    sendMessage("saveSettings", JSON.stringify(state.settings), function(){});
-                } catch(e) {}
+                // Use standard window properties instead of electron.remote.getCurrentWindow()
+                state.settings.window_width = window.innerWidth;
+                state.settings.window_height = window.innerHeight;
+                sendMessage("saveSettings", JSON.stringify(state.settings), function(){});
             }, 1000); // Save bounds 1 second after user finishes resizing
         });
 
