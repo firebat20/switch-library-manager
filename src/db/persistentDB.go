@@ -143,6 +143,32 @@ func (pd *PersistentDB) GetEntry(tableName string, key string, value interface{}
 	return err
 }
 
+// GetRawTable loads every key/value pair in a bucket within a single read
+// transaction, returning the raw (still gob-encoded) values. This lets hot
+// paths - e.g. the deep-scan metadata cache, which was previously read with
+// one View transaction + decode per file - preload the whole bucket once and
+// decode entries on demand.
+//
+// The returned byte slices are copies: bolt only guarantees value memory for
+// the lifetime of the transaction, so we must not hand out the mmap'd slices
+// directly.
+func (pd *PersistentDB) GetRawTable(tableName string) (map[string][]byte, error) {
+	result := map[string][]byte{}
+	err := pd.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(tableName))
+		if b == nil {
+			return nil
+		}
+		return b.ForEach(func(k, v []byte) error {
+			valueCopy := make([]byte, len(v))
+			copy(valueCopy, v)
+			result[string(k)] = valueCopy
+			return nil
+		})
+	})
+	return result, err
+}
+
 /*func (pd *PersistentDB) GetEntries() (map[string]*switchfs.ContentMetaAttributes, error) {
 	pd.db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys

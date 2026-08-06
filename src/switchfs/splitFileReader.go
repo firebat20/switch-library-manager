@@ -146,27 +146,85 @@ func NewSplitFileReader(filePath string) (*splitFile, error) {
 	return &result, nil
 }
 
+// ReadAt implements io.ReaderAt across all parts of the split file.
+//
+// The previous implementation delegated the entire read to the single part
+// containing the starting offset. os.File.ReadAt returns a short read + io.EOF
+// at the end of that part even though the data continues in the next part, so
+// any read that happened to straddle a part boundary failed spuriously. The
+// io.ReaderAt contract requires either filling p completely or returning a
+// non-nil error, so this version loops across parts until p is full, the file
+// genuinely ends (io.EOF), or a real error occurs.
 func (sp *splitFile) ReadAt(p []byte, off int64) (n int, err error) {
-	//calculate the part containing the offset
-	part := int(off / sp.chunkSize)
-
-	if part < 0 || part >= len(sp.info) || sp.info[part] == nil {
-		return 0, errors.New("missing part " + strconv.Itoa(part))
+	if off < 0 {
+		return 0, errors.New("negative offset")
 	}
 
-	if len(sp.files) == 0 || sp.files[part] == nil {
-		file, err := _openFile(filepath.Join(sp.path, sp.info[part].Name()))
-		if err != nil {
-			return 0, err
+	lastPart := len(sp.info) - 1
+
+	for n < len(p) {
+		pos := off + int64(n)
+		part := int(pos / sp.chunkSize)
+
+		// Past the final part => genuine end of the (virtual) file.
+		if part > lastPart {
+			return n, io.EOF
 		}
-		sp.files[part] = file
-	}
-	off = off - sp.chunkSize*int64(part)
+		if part < 0 || sp.info[part] == nil {
+			// A hole in the middle of the sequence is a broken split set, not EOF.
+			return n, errors.New("missing part " + strconv.Itoa(part))
+		}
 
-	if off < 0 || off > sp.info[part].Size() {
-		return 0, errors.New("offset is out of bounds")
+		if sp.files[part] == nil {
+			file, ferr := _openFile(filepath.Join(sp.path, sp.info[part].Name()))
+			if ferr != nil {
+				return n, ferr
+			}
+			sp.files[part] = file
+		}
+
+		partOff := pos - sp.chunkSize*int64(part)
+		partSize := sp.info[part].Size()
+
+		if partOff >= partSize {
+			if part == lastPart {
+				// Reading at/past the end of the final (possibly shorter) part.
+				return n, io.EOF
+			}
+			// A middle part shorter than chunkSize means the set is truncated.
+			return n, io.ErrUnexpectedEOF
+		}
+
+		// Clamp this iteration's read to what the current part can provide.
+		toRead := int64(len(p) - n)
+		if remain := partSize - partOff; toRead > remain {
+			toRead = remain
+		}
+
+		m, rerr := sp.files[part].ReadAt(p[n:n+int(toRead)], partOff)
+		n += m
+
+		if int64(m) < toRead {
+			// The part is shorter than its recorded size (changed on disk?).
+			if rerr == nil {
+				rerr = io.ErrUnexpectedEOF
+			}
+			if rerr == io.EOF && part != lastPart {
+				rerr = io.ErrUnexpectedEOF
+			}
+			return n, rerr
+		}
+
+		// Full clamped read succeeded. An io.EOF here just means we consumed
+		// the part exactly to its end; if more parts follow, keep going. If it
+		// was the last part and the caller wanted more, the next loop
+		// iteration (or the check below) reports io.EOF.
+		if rerr != nil && rerr != io.EOF {
+			return n, rerr
+		}
 	}
-	return sp.files[part].ReadAt(p, off)
+
+	return n, nil
 }
 
 func _openFile(path string) (*os.File, error) {

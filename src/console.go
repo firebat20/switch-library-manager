@@ -82,6 +82,13 @@ func (c *Console) Start() {
 
 	//4. create switch title db
 	titlesDB, err := db.CreateSwitchTitleDB(titleFile, versionsFile)
+	// This error was previously unchecked: a malformed titles/versions json
+	// left titlesDB nil, which panicked further down (len(titlesDB.TitlesMap)).
+	if err != nil {
+		fmt.Printf("\nfailed to process the titles/versions json files - %v\n", err)
+		zap.S().Errorf("failed to create switch title db: %v", err)
+		return
+	}
 
 	//5. read local files
 	folderToScan := settingsObj.Folder
@@ -95,9 +102,16 @@ func (c *Console) Start() {
 	}
 	fmt.Printf("\n\nScanning folder [%v]", folderToScan)
 	progressBar = progressbar.New(2000)
-	keys, _ := settings.InitSwitchKeys(c.baseFolder)
+	// The old message here interpolated the stale `err` from the titles-db
+	// step above, which printed a misleading (or nil) reason. Report the keys
+	// error itself instead.
+	keys, keysErr := settings.InitSwitchKeys(c.baseFolder)
 	if keys == nil || keys.GetKey("header_key") == "" {
-		fmt.Printf("\n!!NOTE!!: keys file was not found, deep scan is disabled, library will be based on file tags.\n %v", err)
+		fmt.Printf("\n!!NOTE!!: keys file was not found, deep scan is disabled, library will be based on file tags.")
+		if keysErr != nil {
+			fmt.Printf("\n %v", keysErr)
+		}
+		fmt.Println()
 	}
 
 	recursiveMode := settingsObj.ScanRecursively
@@ -122,9 +136,13 @@ func (c *Console) Start() {
 	}
 	progressBar.Finish()
 
-	p := (float32(len(localDB.TitlesMap)) / float32(len(titlesDB.TitlesMap))) * 100
-
-	fmt.Printf("Local library completion status: %.2f%% (have %d titles, out of %d titles)\n", p, len(localDB.TitlesMap), len(titlesDB.TitlesMap))
+	// Guard the percentage: an empty titles DB previously produced NaN/+Inf.
+	if len(titlesDB.TitlesMap) > 0 {
+		p := (float32(len(localDB.TitlesMap)) / float32(len(titlesDB.TitlesMap))) * 100
+		fmt.Printf("Local library completion status: %.2f%% (have %d titles, out of %d titles)\n", p, len(localDB.TitlesMap), len(titlesDB.TitlesMap))
+	} else {
+		fmt.Printf("Local library contains %d titles (titles DB is empty, completion status unavailable)\n", len(localDB.TitlesMap))
+	}
 
 	issuesCsvFile := ""
 	if csvOutput != "" {
