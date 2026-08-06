@@ -49,6 +49,20 @@ func (c *Console) Start() {
 		}
 	}
 
+	// Kick off the self-update check in the background so it overlaps with
+	// the titles/versions downloads below instead of serially blocking
+	// startup for up to 30s on a slow endpoint. The result is collected once
+	// the downloads finish.
+	type updateCheckResult struct {
+		newUpdate bool
+		err       error
+	}
+	updateCheckCh := make(chan updateCheckResult, 1)
+	go func() {
+		newUpdate, err := settings.CheckForUpdates()
+		updateCheckCh <- updateCheckResult{newUpdate: newUpdate, err: err}
+	}()
+
 	//1. load the titles JSON object
 	fmt.Println("Downloading latest switch titles json file")
 	progressBar = progressbar.New(2)
@@ -71,9 +85,12 @@ func (c *Console) Start() {
 	settingsObj.VersionsEtag = versionsEtag
 	progressBar.Add(1)
 	progressBar.Finish()
-	newUpdate, err := settings.CheckForUpdates()
 
-	if newUpdate {
+	updateCheck := <-updateCheckCh
+	if updateCheck.err != nil {
+		zap.S().Debugf("update check failed: %v", updateCheck.err)
+	}
+	if updateCheck.newUpdate {
 		fmt.Printf("\n=== New version available, download from Github ===\n")
 	}
 

@@ -83,14 +83,25 @@ func readPfs0(reader io.ReaderAt, offset int64) (*PFS0, error) {
 		return nil, err
 	}
 
-	p.Files = make([]fileEntry, fileCount)
-	// go over the fileEntries
-	for i := uint16(0); i < fileCount; i++ {
-		fileEntryTable := make([]byte, fileEntryTableSize)
-		_, err = reader.ReadAt(fileEntryTable, offset+int64(0x10)+int64(fileEntryTableSize)*int64(i))
+	// Read the whole file-entry table in a single ReadAt instead of one call
+	// per entry. NSP/HFS0 partitions can contain hundreds of entries, and each
+	// ReadAt is a syscall (or, for split files, potentially a part lookup), so
+	// this collapses O(fileCount) reads into one. The size is bounded: uint16
+	// fileCount * 0x40 max entry size = 4 MB worst case, and the header
+	// plausibility check above already rejected anything larger.
+	entryTableBytes := make([]byte, int64(fileEntryTableSize)*int64(fileCount))
+	if len(entryTableBytes) > 0 {
+		_, err = reader.ReadAt(entryTableBytes, offset+0x10)
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	p.Files = make([]fileEntry, fileCount)
+	// go over the fileEntries
+	for i := uint16(0); i < fileCount; i++ {
+		entryStart := int(i) * int(fileEntryTableSize)
+		fileEntryTable := entryTableBytes[entryStart : entryStart+int(fileEntryTableSize)]
 
 		fileOffset := binary.LittleEndian.Uint64(fileEntryTable[0:8])
 		fileSize := binary.LittleEndian.Uint64(fileEntryTable[8:16])

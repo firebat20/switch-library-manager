@@ -57,7 +57,11 @@ func CreateSwitchTitleDB(titlesFile, versionsFile io.Reader) (*SwitchTitlesDB, e
 		return nil, err
 	}
 
-	result := SwitchTitlesDB{TitlesMap: map[string]*SwitchTitle{}}
+	// Pre-size the result map: with tens of thousands of titles, letting the
+	// map grow incrementally causes repeated rehash/regrow churn. Every entry
+	// in `titles` maps to at most one idPrefix bucket, so len(titles) is a
+	// safe upper bound.
+	result := SwitchTitlesDB{TitlesMap: make(map[string]*SwitchTitle, len(titles))}
 	for id, attr := range titles {
 		if len(id) < 16 {
 			continue

@@ -2,6 +2,7 @@ package process
 
 import (
 	"errors"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -61,14 +62,14 @@ func DeleteOldUpdates(baseFolder string, localDB *db.LocalSwitchFilesDB, updateP
 
 	if i != 0 && settings.ReadSettings(baseFolder).OrganizeOptions.DeleteEmptyFolders {
 		if updateProgress != nil {
-			updateProgress.UpdateProgress(i, i+1, "Deleting empty folders... (can take 1-2min)")
+			updateProgress.UpdateProgress(i, i+1, "Deleting empty folders...")
 		}
 		err := deleteEmptyFolders(baseFolder)
 		if err != nil {
 			zap.S().Errorf("Failed to delete empty folders [%v]\n", err)
 		}
 		if updateProgress != nil {
-			updateProgress.UpdateProgress(i+1, i+1, "Deleting empty folders... (can take 1-2min)")
+			updateProgress.UpdateProgress(i+1, i+1, "Deleting empty folders...")
 		}
 	}
 }
@@ -302,7 +303,7 @@ func OrganizeByFolders(baseFolder string,
 	if options.DeleteEmptyFolders {
 		if updateProgress != nil {
 			i += 1
-			updateProgress.UpdateProgress(i, tasksSize, "Deleting empty folders... (can take 1-2min)")
+			updateProgress.UpdateProgress(i, tasksSize, "Deleting empty folders...")
 		}
 		err := deleteEmptyFolders(baseFolder)
 		if err != nil {
@@ -485,14 +486,29 @@ func createFolder(path string, logger *zap.SugaredLogger) error {
 	return nil
 }
 
+// deleteEmptyFolders removes empty directories under path (never path itself),
+// cascading upwards: a directory whose only contents were empty directories is
+// removed as well.
+//
+// The previous implementation walked the whole tree to collect directories and
+// then issued a separate os.ReadDir per directory to test emptiness - two full
+// listings of every directory. This version counts each directory's children
+// during a single WalkDir pass and maintains those counts as it deletes, so no
+// re-listing is needed at all.
 func deleteEmptyFolders(path string) error {
+	childCount := map[string]int{}
 	var dirs []string
-	err := filepath.Walk(path, func(p string, info os.FileInfo, err error) error {
+
+	err := filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			zap.S().Error("Error while scanning for empty folders", err)
 			return nil
 		}
-		if info != nil && info.IsDir() && p != path {
+		if p == path {
+			return nil
+		}
+		childCount[filepath.Dir(p)]++
+		if d.IsDir() {
 			dirs = append(dirs, p)
 		}
 		return nil
@@ -507,27 +523,18 @@ func deleteEmptyFolders(path string) error {
 	})
 
 	for _, dir := range dirs {
-		err = deleteEmptyFolder(dir)
-		if err != nil {
-			zap.S().Error("Error while deleting empty folder", err)
+		if childCount[dir] != 0 {
+			continue
 		}
+		zap.S().Infof("\nDeleting empty folder [%v]", dir)
+		if rmErr := os.Remove(dir); rmErr != nil {
+			zap.S().Error("Error while deleting empty folder", rmErr)
+			continue
+		}
+		// The parent just lost one child; it may now be empty and will be
+		// visited later in this loop (parents sort after their children).
+		childCount[filepath.Dir(dir)]--
 	}
-	return nil
-}
-
-func deleteEmptyFolder(path string) error {
-	files, err := os.ReadDir(path)
-	if err != nil {
-		return err
-	}
-
-	if len(files) != 0 {
-		return nil
-	}
-
-	zap.S().Infof("\nDeleting empty folder [%v]", path)
-	_ = os.Remove(path)
-
 	return nil
 }
 

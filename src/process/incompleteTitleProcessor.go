@@ -2,7 +2,6 @@ package process
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/firebat20/switch-library-manager/db"
@@ -34,7 +33,9 @@ func ScanForMissingUpdates(localDB map[string]*db.SwitchGameFiles,
 			continue
 		}
 
-		if _, ok := switchDB[idPrefix]; !ok {
+		// Hoist the repeated switchDB[idPrefix] lookups into one.
+		remoteTitle, ok := switchDB[idPrefix]
+		if !ok {
 			continue
 		}
 
@@ -42,47 +43,38 @@ func ScanForMissingUpdates(localDB map[string]*db.SwitchGameFiles,
 			continue
 		}
 
-		switchTitle := IncompleteTitle{Attributes: switchDB[idPrefix].Attributes, Meta: switchFile.File.Metadata}
+		switchTitle := IncompleteTitle{Attributes: remoteTitle.Attributes, Meta: switchFile.File.Metadata}
 
-		//sort the available local versions
-		localVersions := make([]int, len(switchFile.Updates))
-		i := 0
-		for k := range switchFile.Updates {
-			localVersions[i] = k
-			i++
-		}
-		sort.Ints(localVersions)
-
-		//sort the available remote versions
-		remoteVersions := make([]int, len(switchDB[idPrefix].Updates))
-		i = 0
-		for k := range switchDB[idPrefix].Updates {
-			remoteVersions[i] = k
-			i++
-		}
-		sort.Ints(remoteVersions)
+		// Only the highest version on each side matters, so scan for the max
+		// in O(n) instead of materializing and sorting both version lists.
 		switchTitle.LocalUpdate = 0
-		switchTitle.LatestUpdate = 0
-		if len(localVersions) != 0 {
-			switchTitle.LocalUpdate = localVersions[len(localVersions)-1]
-		}
-
-		//process updates
-		if len(remoteVersions) != 0 {
-			switchTitle.LatestUpdate = remoteVersions[len(remoteVersions)-1]
-			switchTitle.LatestUpdateDate = switchDB[idPrefix].Updates[remoteVersions[len(remoteVersions)-1]]
-			if switchTitle.LocalUpdate < switchTitle.LatestUpdate {
-				result[switchDB[idPrefix].Attributes.Id] = switchTitle
+		for v := range switchFile.Updates {
+			if v > switchTitle.LocalUpdate {
+				switchTitle.LocalUpdate = v
 			}
 		}
 
-		if len(switchDB[idPrefix].Dlc) == 0 {
+		//process updates
+		switchTitle.LatestUpdate = 0
+		if len(remoteTitle.Updates) != 0 {
+			for v := range remoteTitle.Updates {
+				if v > switchTitle.LatestUpdate {
+					switchTitle.LatestUpdate = v
+				}
+			}
+			switchTitle.LatestUpdateDate = remoteTitle.Updates[switchTitle.LatestUpdate]
+			if switchTitle.LocalUpdate < switchTitle.LatestUpdate {
+				result[remoteTitle.Attributes.Id] = switchTitle
+			}
+		}
+
+		if len(remoteTitle.Dlc) == 0 {
 			continue
 		}
 
 		//process dlc
 		if !ignoreDLCupdates {
-			for k, availableDlc := range switchDB[idPrefix].Dlc {
+			for k, availableDlc := range remoteTitle.Dlc {
 
 				if localDlc, ok := switchFile.Dlc[k]; ok {
 					latestDlcVersion, err := availableDlc.Version.Int64()
@@ -133,14 +125,15 @@ func ScanForMissingDLC(localDB map[string]*db.SwitchGameFiles,
 			continue
 		}
 
-		if _, ok := switchDB[idPrefix]; !ok {
+		remoteTitle, ok := switchDB[idPrefix]
+		if !ok {
 			continue
 		}
-		switchTitle := IncompleteTitle{Attributes: switchDB[idPrefix].Attributes}
+		switchTitle := IncompleteTitle{Attributes: remoteTitle.Attributes}
 
 		//process dlc
-		if len(switchDB[idPrefix].Dlc) != 0 {
-			for k, v := range switchDB[idPrefix].Dlc {
+		if len(remoteTitle.Dlc) != 0 {
+			for k, v := range remoteTitle.Dlc {
 				if _, ok := ignoreTitleIds[k]; ok {
 					continue
 				}
@@ -150,7 +143,7 @@ func ScanForMissingDLC(localDB map[string]*db.SwitchGameFiles,
 				}
 			}
 			if len(switchTitle.MissingDLC) != 0 {
-				result[switchDB[idPrefix].Attributes.Id] = switchTitle
+				result[remoteTitle.Attributes.Id] = switchTitle
 			}
 		}
 	}
