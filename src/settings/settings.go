@@ -130,13 +130,13 @@ func verifySettings(baseFolder string, settings *AppSettings) *AppSettings {
 		settings.VersionsJsonUrl = DEFAULT_VERSIONS_JSON_URL
 	}
 
-	// check to the title json file exists, if it does not, revert ETAG
+	// check if the title json file exists, if it does not, clear ETAG so a fresh copy is downloaded
 	if _, err := os.Stat(filepath.Join(baseFolder, TITLE_JSON_FILENAME)); err != nil {
-		settings.TitlesEtag = "W/\"a5b02845cf6bd61:0\""
+		settings.TitlesEtag = ""
 	}
-	// check to the version json file exists, if it does not, revert ETAG
+	// check if the version json file exists, if it does not, clear ETAG so a fresh copy is downloaded
 	if _, err := os.Stat(filepath.Join(baseFolder, VERSIONS_JSON_FILENAME)); err != nil {
-		settings.VersionsEtag = "W/\"2ef50d1cb6bd61:0\""
+		settings.VersionsEtag = ""
 	}
 
 	return settings
@@ -145,9 +145,9 @@ func verifySettings(baseFolder string, settings *AppSettings) *AppSettings {
 func saveDefaultSettings(baseFolder string) *AppSettings {
 	settingsInstance = &AppSettings{
 		TitlesJsonUrl:          DEFAULT_TITLES_JSON_URL,
-		TitlesEtag:             "W/\"a5b02845cf6bd61:0\"",
+		TitlesEtag:             "",
 		VersionsJsonUrl:        DEFAULT_VERSIONS_JSON_URL,
-		VersionsEtag:           "W/\"2ef50d1cb6bd61:0\"",
+		VersionsEtag:           "",
 		Folder:                 "",
 		Prodkeys:               "",
 		ScanFolders:            []string{},

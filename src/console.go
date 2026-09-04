@@ -314,7 +314,12 @@ type CsvFile struct {
 
 func CreateCsvFile(output string, header []string) *CsvFile {
 	if output != "" {
-		file, _ := os.Create(output)
+		file, err := os.Create(output)
+		if err != nil {
+			fmt.Printf("Failed to create CSV file %v - %v\n", output, err)
+			zap.S().Errorf("Failed to create CSV file %v - %v\n", output, err)
+			return nil
+		}
 		writer := csv.NewWriter(file)
 
 		_ = writer.Write(header)
@@ -328,13 +333,17 @@ func CreateCsvFile(output string, header []string) *CsvFile {
 
 func (csv *CsvFile) Close() {
 	if csv != nil {
-		csv.Writer.Flush()
-		csv.File.Close()
+		if csv.Writer != nil {
+			csv.Writer.Flush()
+		}
+		if csv.File != nil {
+			csv.File.Close()
+		}
 	}
 }
 
 func (csv *CsvFile) Write(row []string) {
-	if csv != nil {
+	if csv != nil && csv.Writer != nil {
 		_ = csv.Writer.Write(row)
 	}
 }

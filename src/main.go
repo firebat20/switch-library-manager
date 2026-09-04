@@ -41,8 +41,9 @@ func main() {
 	sugar.Infof("[Executable: %v]", exePath)
 	sugar.Infof("[Working directory: %v]", workingFolder)
 
-	files, err := AssetDir(workingFolder)
-	if files == nil && err == nil {
+	if AssetDir == nil {
+		appSettings.GUI = false
+	} else if files, err := AssetDir("resources/app"); err != nil || len(files) == 0 {
 		appSettings.GUI = false
 	}
 

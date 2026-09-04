@@ -2,6 +2,7 @@ package process
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path"
@@ -98,7 +99,11 @@ func OrganizeByFolders(baseFolder string,
 			updateProgress.UpdateProgress(i, tasksSize, k)
 		}
 
-		title, titleExist := titlesDB.TitlesMap[k]
+		var title *db.SwitchTitle
+		var titleExist bool
+		if titlesDB != nil && titlesDB.TitlesMap != nil {
+			title, titleExist = titlesDB.TitlesMap[k]
+		}
 		titleName := getTitleName(title, v)
 
 		templateData := map[string]string{}
@@ -137,6 +142,9 @@ func OrganizeByFolders(baseFolder string,
 		}
 
 		var destinationPath = v.File.ExtendedInfo.BaseFolder
+		if destinationPath == "" {
+			destinationPath = baseFolder
+		}
 
 		//create folder if needed
 		if options.CreateFolderPerGame {
@@ -231,7 +239,12 @@ func OrganizeByFolders(baseFolder string,
 				}
 			} else {
 				if options.UpdatesFolder != "" {
-					to = filepath.Join(options.UpdatesFolder, getFileName(options, updateInfo.ExtendedInfo.FileName, templateData, 0))
+					targetDir := options.UpdatesFolder
+					if !filepath.IsAbs(targetDir) {
+						targetDir = filepath.Join(baseFolder, targetDir)
+					}
+					createFolder(targetDir, logger)
+					to = filepath.Join(targetDir, getFileName(options, updateInfo.ExtendedInfo.FileName, templateData, 0))
 				} else {
 					to = filepath.Join(updateInfo.ExtendedInfo.BaseFolder, getFileName(options, updateInfo.ExtendedInfo.FileName, templateData, 0))
 				}
@@ -272,7 +285,12 @@ func OrganizeByFolders(baseFolder string,
 					}
 				} else {
 					if options.DlcFolder != "" {
-						to = filepath.Join(options.DlcFolder, getFileName(options, dlc.ExtendedInfo.FileName, templateData, dlcNameTry))
+						targetDir := options.DlcFolder
+						if !filepath.IsAbs(targetDir) {
+							targetDir = filepath.Join(baseFolder, targetDir)
+						}
+						createFolder(targetDir, logger)
+						to = filepath.Join(targetDir, getFileName(options, dlc.ExtendedInfo.FileName, templateData, dlcNameTry))
 					} else {
 						to = filepath.Join(dlc.ExtendedInfo.BaseFolder, getFileName(options, dlc.ExtendedInfo.FileName, templateData, dlcNameTry))
 					}
@@ -418,7 +436,45 @@ func moveFile(from string, to string) error {
 		}
 	}
 
-	return os.Rename(from, to)
+	err := os.Rename(from, to)
+	if err == nil {
+		return nil
+	}
+
+	// Fallback to copy and delete if rename fails (e.g. cross-device link error across partitions/drives)
+	return copyAndDelete(from, to)
+}
+
+func copyAndDelete(from string, to string) error {
+	srcFile, err := os.Open(from)
+	if err != nil {
+		return err
+	}
+	defer srcFile.Close()
+
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+
+	dstFile, err := os.OpenFile(to, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcInfo.Mode())
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(dstFile, srcFile)
+	closeErr := dstFile.Close()
+	if err != nil {
+		_ = os.Remove(to)
+		return err
+	}
+	if closeErr != nil {
+		_ = os.Remove(to)
+		return closeErr
+	}
+
+	srcFile.Close()
+	return os.Remove(from)
 }
 
 func applyTemplate(templateData map[string]string, useSafeNames bool, template string, nameTry int) string {
@@ -496,6 +552,7 @@ func createFolder(path string, logger *zap.SugaredLogger) error {
 // during a single WalkDir pass and maintains those counts as it deletes, so no
 // re-listing is needed at all.
 func deleteEmptyFolders(path string) error {
+	path = filepath.Clean(path)
 	childCount := map[string]int{}
 	var dirs []string
 

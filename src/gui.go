@@ -206,7 +206,12 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 						version = ""
 					}
 				}
-				if title, ok := g.state.switchDB.TitlesMap[k]; ok {
+				var title *db.SwitchTitle
+				var titleOk bool
+				if g.state.switchDB != nil && g.state.switchDB.TitlesMap != nil {
+					title, titleOk = g.state.switchDB.TitlesMap[k]
+				}
+				if titleOk && title != nil {
 					if title.Attributes.Name != "" {
 						name = title.Attributes.Name
 					}
@@ -225,14 +230,18 @@ func (g *GUI) handleMessage(m *astilectron.EventMessage) interface{} {
 					if name == "" {
 						name = db.ParseTitleNameFromFileName(v.File.ExtendedInfo.FileName)
 					}
+					titleId := ""
+					if v.File.Metadata != nil {
+						titleId = v.File.Metadata.TitleId
+					}
 					libraryData = append(libraryData,
 						LibraryTemplateData{
 							Name:    name,
 							Update:  v.LatestUpdate,
 							Version: version,
 							Type:    getType(v),
-							TitleId: v.File.Metadata.TitleId,
-							Path:    v.File.ExtendedInfo.FileName,
+							TitleId: titleId,
+							Path:    filepath.Join(v.File.ExtendedInfo.BaseFolder, v.File.ExtendedInfo.FileName),
 						})
 				}
 
@@ -334,6 +343,9 @@ func (g *GUI) saveSettings(settingsJson string) error {
 }
 
 func (g *GUI) getMissingDLC() string {
+	if g.state.localDB == nil || g.state.localDB.TitlesMap == nil || g.state.switchDB == nil || g.state.switchDB.TitlesMap == nil {
+		return "[]"
+	}
 	settingsObj := settings.ReadSettings(g.baseFolder)
 	ignoreIds := map[string]struct{}{}
 	for _, id := range settingsObj.IgnoreDLCTitleIds {
@@ -352,6 +364,9 @@ func (g *GUI) getMissingDLC() string {
 }
 
 func (g *GUI) getMissingUpdates() string {
+	if g.state.localDB == nil || g.state.localDB.TitlesMap == nil || g.state.switchDB == nil || g.state.switchDB.TitlesMap == nil {
+		return "[]"
+	}
 	settingsObj := settings.ReadSettings(g.baseFolder)
 	ignoreIds := map[string]struct{}{}
 	for _, id := range settingsObj.IgnoreUpdateTitleIds {
@@ -412,6 +427,11 @@ func (g *GUI) buildLocalDB(localDbManager *db.LocalSwitchDBManager, ignoreCache 
 }
 
 func (g *GUI) organizeLibrary() {
+	if g.state.localDB == nil {
+		zap.S().Error("local library is not loaded, cannot organize")
+		g.state.window.SendMessage(Message{Name: "error", Payload: "Local library is not loaded. Please scan your library first."}, func(m *astilectron.EventMessage) {})
+		return
+	}
 	folderToScan := settings.ReadSettings(g.baseFolder).Folder
 	options := settings.ReadSettings(g.baseFolder).OrganizeOptions
 	if !process.IsOptionsValid(options) {
@@ -441,6 +461,9 @@ func (g *GUI) UpdateProgress(curr int, total int, message string) {
 
 func (g *GUI) getMissingGames() []SwitchTitle {
 	var result []SwitchTitle
+	if g.state.switchDB == nil || g.state.switchDB.TitlesMap == nil || g.state.localDB == nil || g.state.localDB.TitlesMap == nil {
+		return result
+	}
 	for k, v := range g.state.switchDB.TitlesMap {
 		if _, ok := g.state.localDB.TitlesMap[k]; ok {
 			continue
