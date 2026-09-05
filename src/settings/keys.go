@@ -75,7 +75,7 @@ func InitSwitchKeys(baseFolder string) (*switchKeys, error) {
 	keysInstance = &switchKeys{keys: map[string]string{}}
 	for _, key := range p.Keys() {
 		value, _ := p.Get(key)
-		keysInstance.keys[key] = value
+		keysInstance.keys[strings.ToLower(key)] = value
 	}
 
 	logger.Infof("Loaded prod.keys from: %v", path)

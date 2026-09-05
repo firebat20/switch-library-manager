@@ -115,7 +115,7 @@ func readBinaryCnmt(pfs0 *PFS0, data []byte) (*ContentMetaAttributes, error) {
 		metaType = "UPD"
 	}
 
-	return &ContentMetaAttributes{Contents: contents, Version: int(version), TitleId: fmt.Sprintf("0%x", titleId), Type: metaType}, nil
+	return &ContentMetaAttributes{Contents: contents, Version: int(version), TitleId: fmt.Sprintf("%016x", titleId), Type: metaType}, nil
 }
 
 func readXmlCnmt(xmlBytes []byte) (*ContentMetaAttributes, error) {

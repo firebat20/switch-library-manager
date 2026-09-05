@@ -23,7 +23,7 @@ func main() {
 	workingFolder := filepath.Dir(exePath)
 
 	if runtime.GOOS == "darwin" {
-		if strings.Contains(workingFolder, ".app") {
+		if strings.Contains(workingFolder, ".app/") || strings.HasSuffix(workingFolder, ".app") {
 			appIndex := strings.Index(workingFolder, ".app")
 			sepIndex := strings.LastIndex(workingFolder[:appIndex], string(os.PathSeparator))
 			workingFolder = workingFolder[:sepIndex]

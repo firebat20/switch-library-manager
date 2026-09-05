@@ -185,7 +185,7 @@ $(function () {
                 defaultId: 0,
                 title: 'New update available',
                 message: 'There is a new update available, please download from Github',
-                detail: message.payload
+                detail: 'Visit github.com/firebat20/switch-library-manager/releases to download the latest version.'
             });
         });
 

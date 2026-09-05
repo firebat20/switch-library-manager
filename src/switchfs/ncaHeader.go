@@ -4,7 +4,7 @@ import (
 	"crypto/aes"
 	"encoding/binary"
 	"encoding/hex"
-	"strconv"
+	"fmt"
 
 	"github.com/firebat20/switch-library-manager/switchfs/_crypto"
 )
@@ -77,7 +77,7 @@ func DecryptNcaHeader(key string, encHeader []byte) (*ncaHeader, error) {
 	result.rightsId = decryptNcaHeader[0x230 : 0x230+0x10]
 
 	title_id_dec := binary.LittleEndian.Uint64(decryptNcaHeader[0x210 : 0x210+0x8])
-	result.titleId = []byte(strconv.FormatInt(int64(title_id_dec), 16))
+	result.titleId = []byte(fmt.Sprintf("%016x", title_id_dec))
 	result.keyGeneration1 = decryptNcaHeader[0x206:0x207][0]
 	result.keyGeneration2 = decryptNcaHeader[0x220:0x221][0]
 

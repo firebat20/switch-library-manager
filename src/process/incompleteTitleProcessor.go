@@ -3,6 +3,7 @@ package process
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/firebat20/switch-library-manager/db"
 	"github.com/firebat20/switch-library-manager/switchfs"
@@ -39,7 +40,7 @@ func ScanForMissingUpdates(localDB map[string]*db.SwitchGameFiles,
 			continue
 		}
 
-		if _, ok := ignoreTitleIds[switchFile.File.Metadata.TitleId]; ok {
+		if _, ok := ignoreTitleIds[strings.ToLower(switchFile.File.Metadata.TitleId)]; ok {
 			continue
 		}
 
@@ -86,7 +87,7 @@ func ScanForMissingUpdates(localDB map[string]*db.SwitchGameFiles,
 						continue
 					}
 
-					if _, ok := ignoreTitleIds[localDlc.Metadata.TitleId]; ok {
+					if _, ok := ignoreTitleIds[strings.ToLower(localDlc.Metadata.TitleId)]; ok {
 						continue
 					}
 
@@ -134,7 +135,7 @@ func ScanForMissingDLC(localDB map[string]*db.SwitchGameFiles,
 		//process dlc
 		if len(remoteTitle.Dlc) != 0 {
 			for k, v := range remoteTitle.Dlc {
-				if _, ok := ignoreTitleIds[k]; ok {
+				if _, ok := ignoreTitleIds[strings.ToLower(k)]; ok {
 					continue
 				}
 

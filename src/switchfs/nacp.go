@@ -24,6 +24,7 @@ const (
 	Korean
 	Taiwanese
 	Chinese
+	BrazilianPortuguese
 )
 
 type NacpTitle struct {
@@ -55,7 +56,7 @@ func (l Language) String() string {
 		"Korean",
 		"Taiwanese",
 		"Chinese",
-		"Chinese"}[l]
+		"BrazilianPortuguese"}[l]
 }
 
 func ExtractNacp(cnmt *ContentMetaAttributes, file io.ReaderAt, securePartition *PFS0, securePartitionOffset int64) (*Nacp, error) {
@@ -112,7 +113,7 @@ func readNacp(data []byte, romFsHeader RomfsHeader, fileEntry RomfsFileEntry) (N
 
 	isbn := readBytesUntilZero(data[offset+0x3000 : offset+0x3000+0x25])
 	displayVersion := readBytesUntilZero(data[offset+0x3060 : offset+0x3060+0x10])
-	supportedLanguageFlag := binary.BigEndian.Uint32(data[offset+0x302C : offset+0x302C+0x4])
+	supportedLanguageFlag := binary.LittleEndian.Uint32(data[offset+0x302C : offset+0x302C+0x4])
 
 	return Nacp{TitleName: titles, Isbn: string(isbn), DisplayVersion: string(displayVersion), SupportedLanguageFlag: supportedLanguageFlag}, nil
 	/*
