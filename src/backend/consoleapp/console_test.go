@@ -1,6 +1,7 @@
 package consoleapp
 
 import (
+	"bytes"
 	"encoding/csv"
 	"os"
 	"path/filepath"
@@ -100,5 +101,37 @@ func TestFlattenMissingDLC(t *testing.T) {
 		if len(csvRow) != 3 || csvRow[0] != want[i].game || csvRow[1] != want[i].gameID || csvRow[2] != want[i].dlc+" ["+want[i].dlcID+"]" {
 			t.Errorf("CSV row %d = %#v", i, csvRow)
 		}
+	}
+}
+
+func TestCreateCsvFileWritesUTF8BOM(t *testing.T) {
+	if got := CreateCsvFile("", []string{"Title"}); got != nil {
+		t.Fatalf("CreateCsvFile(\"\") = %#v, want nil", got)
+	}
+
+	outputPath := filepath.Join(t.TempDir(), "test_export.csv")
+	header := []string{"Title", "TitleId", "Notes"}
+	csvFile := CreateCsvFile(outputPath, header)
+	if csvFile == nil {
+		t.Fatalf("CreateCsvFile(%q) returned nil", outputPath)
+	}
+
+	csvFile.Write([]string{"ゼルダの伝説 ティアーズ オブ ザ キングダム", "0100f2c0115b6000", "Japanese characters"})
+	csvFile.Write([]string{"Pokémon Legends: Arceus", "01001f5010dfa000", "Accented characters"})
+	csvFile.Close()
+
+	raw, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatalf("failed to read exported csv file: %v", err)
+	}
+
+	expectedBOM := []byte{0xEF, 0xBB, 0xBF}
+	if len(raw) < 3 || !bytes.Equal(raw[:3], expectedBOM) {
+		t.Fatalf("expected UTF-8 BOM at start of file, got %v", raw[:min(len(raw), 3)])
+	}
+
+	content := string(raw[3:])
+	if !strings.Contains(content, "ゼルダの伝説") || !strings.Contains(content, "Pokémon") {
+		t.Fatalf("exported CSV content missing expected non-ASCII strings: %s", content)
 	}
 }

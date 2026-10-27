@@ -418,27 +418,44 @@ type CsvFile struct {
 
 func CreateCsvFile(output string, header []string) *CsvFile {
 	if output != "" {
-		file, _ := os.Create(output)
+		file, err := os.Create(output)
+		if err != nil {
+			zap.S().Errorf("failed to create csv file %s: %v", output, err)
+			return nil
+		}
+		if _, err := file.WriteString("\xef\xbb\xbf"); err != nil {
+			zap.S().Errorf("failed to write UTF-8 BOM to csv file %s: %v", output, err)
+			_ = file.Close()
+			return nil
+		}
 		writer := csv.NewWriter(file)
 
-		_ = writer.Write(header)
+		if err := writer.Write(header); err != nil {
+			zap.S().Errorf("failed to write header to csv file %s: %v", output, err)
+		}
 
 		instance := &CsvFile{Writer: writer, File: file}
 		return instance
-	} else {
-		return nil
 	}
+	return nil
 }
 
 func (csv *CsvFile) Close() {
 	if csv != nil {
 		csv.Writer.Flush()
-		csv.File.Close()
+		if err := csv.Writer.Error(); err != nil {
+			zap.S().Errorf("csv flush error: %v", err)
+		}
+		if err := csv.File.Close(); err != nil {
+			zap.S().Errorf("failed to close csv file: %v", err)
+		}
 	}
 }
 
 func (csv *CsvFile) Write(row []string) {
 	if csv != nil {
-		_ = csv.Writer.Write(row)
+		if err := csv.Writer.Write(row); err != nil {
+			zap.S().Errorf("failed to write csv row: %v", err)
+		}
 	}
 }
