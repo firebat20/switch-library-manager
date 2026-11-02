@@ -84,7 +84,7 @@ $(function () {
         const tableOptions = Object.assign({
             pagination: "local",
             paginationSize: state.settings.gui.page_size,
-            footerElement: '<div class="slm-table-footer-actions"><button type="button" class="btn btn-link export-btn">Export to CSV</button></div>'
+            footerElement: '<div class="slm-table-footer-actions"><button type="button" class="btn btn-link export-btn" data-format="csv">Export to CSV</button><button type="button" class="btn btn-link export-btn" data-format="xlsx">Export to Excel</button></div>'
         }, options || {});
         const renderComplete = tableOptions.renderComplete;
 
@@ -991,8 +991,18 @@ $(function () {
         });
 
         $("body").on("click", ".export-btn", e => {
+            const format = $(e.currentTarget).data("format") || "csv";
             if (currTable && currTableExportKind) {
-                currTable.download("csv", "slm_" + currTableExportKind + "." + exportDate() + ".csv", { bom: true }, "all");
+                const filename = "slm_" + currTableExportKind + "." + exportDate() + "." + format;
+                if (format === "xlsx") {
+                    if (typeof XLSX === "undefined") {
+                        showError("Excel export library is not available.");
+                        return;
+                    }
+                    currTable.download("xlsx", filename, { sheetName: currTableExportKind }, "all");
+                } else {
+                    currTable.download("csv", filename, { bom: true }, "all");
+                }
             }
         });
 

@@ -2,7 +2,6 @@ package process
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -509,7 +508,7 @@ func deleteEmptyFolders(path string, protectedRoots ...string) error {
 }
 
 func deleteEmptyFolder(path string) error {
-	files, err := ioutil.ReadDir(path)
+	files, err := os.ReadDir(path)
 	if err != nil {
 		return err
 	}
