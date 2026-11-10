@@ -170,7 +170,7 @@ func getDlcName(switchTitle *db.SwitchTitle, file db.SwitchFileInfo) string {
 
 func getFolderName(options settings.OrganizeOptions, templateData map[string]string) string {
 
-	return applyTemplate(templateData, options.SwitchSafeFileNames, options.FolderNameTemplate, 0)
+	return applyTemplate(templateData, !options.AllowUnicodeFileNames, options.FolderNameTemplate, 0)
 }
 
 func getFileName(options settings.OrganizeOptions, originalName string, templateData map[string]string, nameTry int) string {
@@ -182,7 +182,10 @@ func getFileName(options settings.OrganizeOptions, originalName string, template
 	if !options.IncludeBaseType && templateData[settings.TEMPLATE_TYPE] == "BASE" {
 		template = strings.ReplaceAll(template, "{"+settings.TEMPLATE_TYPE+"}", "")
 	}
-	result := applyTemplate(templateData, options.SwitchSafeFileNames, template, nameTry)
+	result := applyTemplate(templateData, !options.AllowUnicodeFileNames, template, nameTry)
+	if result == "" {
+		return ""
+	}
 	return result + ext
 }
 
@@ -331,6 +334,9 @@ func organizationDestinationFolder(libraryRoot, gameFolder, sourceFolder string,
 		return "", false, err
 	}
 	if options.CreateFolderPerGame {
+		if gameFolder == "" {
+			return "", false, fmt.Errorf("folder name template %q produces an empty game folder name after sanitization", options.FolderNameTemplate)
+		}
 		return filepath.Join(libraryRoot, gameFolder), true, nil
 	}
 	if importing {
@@ -345,6 +351,9 @@ func organizationTargetPath(libraryRoot, gameFolder, sourceFolder, originalName 
 		return "", false, err
 	}
 	fileName := getFileName(options, originalName, templateData, nameTry)
+	if fileName == "" {
+		return "", false, fmt.Errorf("file name template %q produces an empty file stem for %q after sanitization", options.FileNameTemplate, originalName)
+	}
 	configuredFolder := ""
 	switch contentKind {
 	case "update":
@@ -394,12 +403,6 @@ func applyTemplate(templateData map[string]string, useSafeNames bool, template s
 	result = strings.ReplaceAll(result, "()", "")
 	result = strings.ReplaceAll(result, "<>", "")
 
-	result = strings.TrimSuffix(result, ".")
-
-	if nameTry > 0 {
-		result = result + "(" + strconv.Itoa(nameTry) + ")"
-	}
-
 	if useSafeNames {
 		result = nihongo.RomajiString(result)
 
@@ -414,7 +417,14 @@ func applyTemplate(templateData map[string]string, useSafeNames bool, template s
 	result = space.ReplaceAllString(result, " ")
 
 	result = strings.TrimSpace(result)
-	return folderIllegalCharsRegex.ReplaceAllString(result, "")
+	result = folderIllegalCharsRegex.ReplaceAllString(result, "")
+	// Filtering can expose dots or spaces that Windows cannot use at the end
+	// of a path component. Normalize before adding a suffix or file extension.
+	result = strings.TrimRight(result, ". ")
+	if result != "" && nameTry > 0 {
+		result += "(" + strconv.Itoa(nameTry) + ")"
+	}
+	return result
 }
 
 func setFileSizeTemplateData(templateData map[string]string, size int64) {
